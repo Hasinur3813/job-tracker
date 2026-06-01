@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 export const metadata: Metadata = {
   title: "চাকরি ট্র্যাকার - Chakri Tracker",
   description: "আপনার সব চাকরি আবেদন এক জায়গায় সংরক্ষণ এবং ট্র্যাক করুন",
+  icons: [{ rel: "icon", url: "/job-tracker-logo.ico" }],
 };
 
 export default function RootLayout({
