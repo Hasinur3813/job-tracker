@@ -27,7 +27,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       {/* Category Toggle Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
         <label className="text-sm font-semibold text-gray-700 font-sans">
-          বিভাগ অনুযায়ী ফিল্টার:
+          ক্যাটাগরি অনুযায়ী ফিল্টার:
         </label>
         <div className="flex bg-gray-100 p-1 rounded-lg self-start sm:self-auto">
           {categories.map((cat) => (

@@ -44,14 +44,14 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-2 text-xs font-bold text-blue-600 bg-blue-50/70 border border-blue-100 rounded-full px-3 py-1 w-fit mb-2">
                 <Sparkles size={12} className="animate-pulse" />
-                <span>রিয়েল-টাইম ক্লাউড ক্যারিয়ার সিঙ্ক</span>
+                <span>বাস্তব-সময়ের ক্লাউড ক্যারিয়ার সিঙ্ক</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">
-                আমার চাকরি ক্যারিয়ার ট্র্যাকার
+                আমার চাকরি আবেদন ট্র্যাকার
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                আপনার আবেদনের সঠিক ডেডলাইন, অগ্রগতি, পাসওয়ার্ড ভল্ট এবং
-                স্ট্যাটাস ট্র্যাকিং ড্যাশবোর্ড।
+                আপনার প্রতিটি আবেদন, ডেডলাইন, অগ্রগতি, পাসওয়ার্ড ভল্ট ও
+                স্ট্যাটাস এক জায়গায় ট্র্যাক করুন।
               </p>
             </div>
             <Link
@@ -88,7 +88,7 @@ export default function DashboardPage() {
               </div>
               <input
                 type="text"
-                placeholder="প্রতিষ্ঠান বা কোম্পানির নাম অথবা চাকরির পদের নাম দিয়ে খুঁজুন..."
+                placeholder="প্রতিষ্ঠান বা পদের নাম লিখে খুঁজুন..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-24 py-3 bg-gray-50 hover:bg-gray-100/60 focus:bg-white border border-gray-200 focus:border-blue-500 rounded-xl text-sm font-sans focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400 font-medium"
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                   onClick={() => setSearchQuery("")}
                   className="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-gray-400 hover:text-red-500 font-sans cursor-pointer h-fit my-auto"
                 >
-                  ক্লিয়ার
+                  মুছুন
                 </button>
               )}
             </div>
@@ -124,31 +124,73 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : filteredJobs.length === 0 ? (
-              <div className="bg-white border border-gray-150 rounded-2xl py-16 px-4 text-center max-w-xl mx-auto shadow-xs mt-6">
-                <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
-                  <ClipboardList size={26} />
+              <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm mt-6 max-w-4xl mx-auto">
+                <div className="flex flex-col md:flex-row md:items-start gap-6">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <ClipboardList size={28} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                      চলুন আপনার চাকরি ট্র্যাকিং শুরু করি
+                    </h3>
+                    <p className="mt-3 text-sm text-gray-600 max-w-2xl leading-7">
+                      আপনি এখনও কোনো চাকরির আবেদন যোগ করেননি। এখানে আপনার
+                      প্রতিটি আবেদন, ডেডলাইন, স্ট্যাটাস ও প্রয়োজনীয় নোট এক
+                      জায়গায় সুশৃঙ্খলভাবে সাজাতে পারবেন। শুরু করতে নিচের বাটনে
+                      ক্লিক করুন।
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 font-sans mb-1">
-                  কোনো চাকরির আবেদন মেলেনি
-                </h3>
-                <p className="text-sm text-gray-550 font-sans max-w-xs mx-auto mb-6 leading-relaxed">
-                  {searchQuery ||
-                  selectedCategory !== "all" ||
-                  selectedStatus !== "all"
-                    ? "আপনার অনুসন্ধান অনুযায়ী কোনো তথ্য পাওয়া যায়নি।"
-                    : "আপনার অ্যাকাউন্টে এখনো কোনো চাকরির আবেদন যোগ করেননি।"}
-                </p>
-                {!searchQuery &&
-                  selectedCategory === "all" &&
-                  selectedStatus === "all" && (
-                    <Link
-                      href="/job/new"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-3xl border border-gray-100 bg-slate-50 p-5">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                      কীভাবে শুরু করবেন
+                    </h4>
+                    <ul className="space-y-2 text-sm text-gray-600 leading-6">
+                      <li>• নতুন চাকরির আবেদন যোগ করুন</li>
+                      <li>
+                        • প্রতিটি আবেদনের ডেডলাইন ও স্ট্যাটাস ট্র্যাক করুন
+                      </li>
+                      <li>• প্রয়োজনীয় তথ্য ও লগইন ডিটেইল নিরাপদে সেভ করুন</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-3xl border border-gray-100 bg-slate-50 p-5">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                      ড্যাশবোর্ডের সুবিধা
+                    </h4>
+                    <ul className="space-y-2 text-sm text-gray-600 leading-6">
+                      <li>• দ্রুত অনুসন্ধান ও ফিল্টার করুন</li>
+                      <li>• ক্যাটেগরি ও স্ট্যাটাস অনুযায়ী তালিকা সাজান</li>
+                      <li>• পরবর্তীতে সহজেই আপডেট করুন</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/job/new"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    <Plus size={16} />
+                    <span>নতুন আবেদন যোগ করুন</span>
+                  </Link>
+                  {(searchQuery ||
+                    selectedCategory !== "all" ||
+                    selectedStatus !== "all") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedCategory("all");
+                        setSelectedStatus("all");
+                      }}
+                      className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                     >
-                      <Plus size={14} />
-                      <span>প্রথম আবেদন যোগ করুন</span>
-                    </Link>
+                      ফিল্টার মুছুন
+                    </button>
                   )}
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

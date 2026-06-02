@@ -136,8 +136,9 @@ export function useJobs() {
 
   const addJob = async (jobData: Omit<JobDocument, "id">) => {
     if (!currentUser) throw new Error("No user logged in");
+    const path = `users/${currentUser.uid}/jobs`;
+
     try {
-      //   const path = `users/${currentUser.uid}/jobs`;
       const jobsRef = collection(db, "users", currentUser.uid, "jobs");
       const docRef = await addDoc(jobsRef, {
         ...jobData,
@@ -146,14 +147,15 @@ export function useJobs() {
       });
       return docRef;
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, null);
+      handleFirestoreError(err, OperationType.CREATE, path);
     }
   };
 
   const updateJob = async (jobId: string, updates: Partial<JobDocument>) => {
     if (!currentUser) throw new Error("No user logged in");
+    const path = `users/${currentUser.uid}/jobs/${jobId}`;
+
     try {
-      //   const path = `users/${currentUser.uid}/jobs/${jobId}`;
       const jobRef = doc(db, "users", currentUser.uid, "jobs", jobId);
       const { ...updateData } = updates;
       await updateDoc(jobRef, {
@@ -161,32 +163,34 @@ export function useJobs() {
         updated_at: serverTimestamp(),
       });
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, null);
+      handleFirestoreError(err, OperationType.UPDATE, path);
     }
   };
 
   const updateStatus = async (jobId: string, status: string) => {
     if (!currentUser) throw new Error("No user logged in");
+    const path = `users/${currentUser.uid}/jobs/${jobId}`;
+
     try {
-      //   const path = `users/${currentUser.uid}/jobs/${jobId}`;
       const jobRef = doc(db, "users", currentUser.uid, "jobs", jobId);
       await updateDoc(jobRef, {
         status,
         updated_at: serverTimestamp(),
       });
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, null);
+      handleFirestoreError(err, OperationType.UPDATE, path);
     }
   };
 
   const deleteJob = async (jobId: string) => {
     if (!currentUser) throw new Error("No user logged in");
+    const path = `users/${currentUser.uid}/jobs/${jobId}`;
+
     try {
-      //   const path = `users/${currentUser.uid}/jobs/${jobId}`;
       const jobRef = doc(db, "users", currentUser.uid, "jobs", jobId);
       await deleteDoc(jobRef);
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, null);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
