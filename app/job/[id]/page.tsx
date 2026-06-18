@@ -12,6 +12,7 @@ import {
   DollarSign,
   Globe,
   FileText,
+  Hash,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -229,6 +230,19 @@ export default function JobDetailPage({
                   </span>
                   <span className="text-sm font-semibold text-gray-800 font-sans">
                     {job.organisation}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-gray-50 border border-gray-100 rounded-lg text-gray-400">
+                  <Hash size={16} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-400 font-sans">
+                    পদ সংখ্যা
+                  </span>
+                  <span className="text-sm font-semibold text-gray-800 font-sans">
+                    {job.position_number || "উল্লেখ করা হয়নি"}
                   </span>
                 </div>
               </div>

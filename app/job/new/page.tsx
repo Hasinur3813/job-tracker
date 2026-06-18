@@ -3,59 +3,22 @@
 import React, { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Eye, EyeOff, Lock } from "lucide-react";
 import toast from "react-hot-toast";
-import { JobDocument, useJobs } from "@/lib/hooks/useJobs";
+import { useJobs } from "@/lib/hooks/useJobs";
+import {
+  jobFormSchema,
+  jobFormDefaultValues,
+  toJobPayload,
+  type JobFormInput,
+} from "@/lib/validation/jobFormSchema";
 import { Header } from "@/app/components/layout/Header";
 import { Input } from "@/app/components/ui/Input";
 import { Select } from "@/app/components/ui/Select";
 import { Button } from "@/app/components/ui/Button";
 import { STATUS_CONFIG } from "@/lib/constants/statusConfig";
 import { ProtectedRoute } from "@/app/components/layout/ProtectedRoute";
-
-const jobFormSchema = z.object({
-  title: z.string().min(1, "চাকরির পদের নাম আবশ্যক"),
-  organisation: z.string().min(1, "প্রতিষ্ঠানের নাম আবশ্যক"),
-  category: z.enum(["govt", "non-govt"]),
-  deadline: z.string().min(1, "আবেদনের শেষ তারিখ আবশ্যক"),
-  status: z.enum([
-    "not_applied",
-    "applied",
-    "skipped",
-    "given_exam",
-    "passed",
-    "failed",
-    "interviewed",
-  ]),
-  source_url: z
-    .string()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        try {
-          new URL(val);
-          return true;
-        } catch {
-          return false;
-        }
-      },
-      { message: "সঠিক লিংক প্রদান করুন (যেমন: https://example.com)" },
-    )
-    .optional()
-    .or(z.literal("")),
-  salary_range: z.string().optional().or(z.literal("")),
-  notes: z.string().optional().or(z.literal("")),
-  credentials: z
-    .object({
-      username: z.string().optional().or(z.literal("")),
-      password: z.string().optional().or(z.literal("")),
-    })
-    .optional(),
-});
-
-type JobFormInput = z.infer<typeof jobFormSchema>;
 
 export default function JobNewPage() {
   const router = useRouter();
@@ -70,20 +33,8 @@ export default function JobNewPage() {
     formState: { errors },
   } = useForm<JobFormInput>({
     resolver: zodResolver(jobFormSchema),
-    defaultValues: {
-      title: "",
-      organisation: "",
-      category: "non-govt",
-      deadline: "",
-      status: "not_applied",
-      source_url: "",
-      salary_range: "",
-      notes: "",
-      credentials: {
-        username: "",
-        password: "",
-      },
-    },
+    defaultValues: jobFormDefaultValues,
+    mode: "onBlur",
   });
 
   const categoryValue = useWatch({ control, name: "category" });
@@ -91,31 +42,8 @@ export default function JobNewPage() {
   const onSubmit = async (data: JobFormInput) => {
     setSaving(true);
 
-    const payload: Omit<JobDocument, "id"> = {
-      title: data.title,
-      organisation: data.organisation,
-      category: data.category,
-      deadline: data.deadline,
-      status: data.status,
-      source_url: data.source_url || "",
-      salary_range: data.salary_range || "",
-      notes: data.notes || "",
-    };
-
-    if (data.category === "govt") {
-      payload.credentials = {
-        username: data.credentials?.username || "",
-        password: data.credentials?.password || "",
-      };
-    } else {
-      payload.credentials = {
-        username: "",
-        password: "",
-      };
-    }
-
     try {
-      const docRef = await addJob(payload);
+      const docRef = await addJob(toJobPayload(data));
       toast.success("চাকরি সফলভাবে যোগ করা হয়েছে ✓");
       if (docRef?.id) {
         router.push(`/job/${docRef.id}`);
@@ -159,25 +87,35 @@ export default function JobNewPage() {
                 নতুন আবেদন যুক্ত করুন
               </h1>
               <p className="text-xs text-gray-500 font-sans mt-0.5">
-                আবেদন ঢোকান এবং ট্র্যাকিং শুরু করুন।
+                আবেদন যোগ করুন এবং ট্র্যাকিং শুরু করুন।
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             <div className="bg-white border border-gray-150 shadow-xs rounded-2xl p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   label="আবেদনের নাম / পদের নাম"
                   placeholder="যেমন: অ্যাসিস্ট্যান্ট প্রোগ্রামার"
+                  maxLength={200}
                   error={errors.title?.message}
                   {...register("title")}
                 />
                 <Input
                   label="প্রতিষ্ঠান বা অর্গানাইজেশন"
                   placeholder="যেমন: বাংলাদেশ ব্যাংক"
+                  maxLength={200}
                   error={errors.organisation?.message}
                   {...register("organisation")}
+                />
+                <Input
+                  label="পদ সংখ্যা"
+                  placeholder="যেমন: ০১ বা ৫"
+                  inputMode="numeric"
+                  maxLength={20}
+                  error={errors.position_number?.message}
+                  {...register("position_number")}
                 />
               </div>
 
@@ -207,8 +145,9 @@ export default function JobNewPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="সার্কুলার লিঙ্ক / রেফারেন্স URL"
-                  type="text"
+                  type="url"
                   placeholder="https://example.com/circular"
+                  maxLength={500}
                   error={errors.source_url?.message}
                   {...register("source_url")}
                 />
@@ -216,6 +155,7 @@ export default function JobNewPage() {
                   label="বেতন বা রেঞ্জ"
                   type="text"
                   placeholder="যেমন: ২২,০০০ - ৫৩,০৬০ টাকা"
+                  maxLength={100}
                   error={errors.salary_range?.message}
                   {...register("salary_range")}
                 />
@@ -227,12 +167,20 @@ export default function JobNewPage() {
                 </label>
                 <textarea
                   rows={4}
+                  maxLength={2000}
                   placeholder="পরীক্ষার সিলেবাস, প্রবেশপত্র প্রাপ্তি ইত্যাদি সম্পর্কিত তথ্য..."
-                  className={
-                    "w-full px-3 py-2 bg-white border border-gray-300 focus:ring-blue-500 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:border-transparent transition-all duration-200 font-sans"
-                  }
+                  className={`w-full px-3 py-2 bg-white border rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:border-transparent transition-all duration-200 font-sans ${
+                    errors.notes
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-blue-500"
+                  }`}
                   {...register("notes")}
                 />
+                {errors.notes && (
+                  <p className="mt-1 text-xs text-red-600 font-sans">
+                    {errors.notes.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -250,6 +198,7 @@ export default function JobNewPage() {
                   <Input
                     label="ইউজারনেম / মোবাইল নম্বর"
                     placeholder="যেমন: USER12345"
+                    maxLength={100}
                     error={errors.credentials?.username?.message}
                     {...register("credentials.username")}
                   />
@@ -258,6 +207,7 @@ export default function JobNewPage() {
                       label="পাসওয়ার্ড"
                       type={showPassword ? "text" : "password"}
                       placeholder="যেমন: pass@123"
+                      maxLength={100}
                       error={errors.credentials?.password?.message}
                       className="pr-10"
                       {...register("credentials.password")}

@@ -12,6 +12,7 @@ import {
   KeyRound,
   ChevronDown,
   ChevronUp,
+  Hash,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { JobDocument } from "@/lib/hooks/useJobs";
@@ -208,6 +209,18 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
               <Building2 size={13} className="text-gray-400 shrink-0" />
               <span className="truncate font-sans">{job.organisation}</span>
             </div>
+
+            {job.position_number && (
+              <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
+                <Hash size={12} className="text-gray-400 shrink-0" />
+                <span className="font-sans">
+                  পদ সংখ্যা:{" "}
+                  <span className="font-semibold text-gray-600">
+                    {job.position_number}
+                  </span>
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </button>

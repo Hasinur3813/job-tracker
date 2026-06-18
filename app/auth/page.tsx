@@ -153,7 +153,7 @@ export default function AuthPage() {
                   disabled={authLoading}
                   className="mt-6"
                 >
-                  {authLoading ? "চলছে..." : "লগইন করুন"}
+                  {authLoading ? "একটু অপেক্ষা করুন..." : "লগইন করুন"}
                 </Button>
 
                 <div className="relative my-6">

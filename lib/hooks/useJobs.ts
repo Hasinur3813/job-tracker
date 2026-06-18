@@ -71,6 +71,7 @@ export interface JobDocument {
   id: string;
   title: string;
   organisation: string;
+  position_number?: string;
   category: "govt" | "non-govt";
   deadline: string; // YYYY-MM-DD
   source_url?: string;

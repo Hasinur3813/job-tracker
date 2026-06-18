@@ -4,61 +4,25 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { ArrowLeft, Save, Eye, EyeOff, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useJobs, JobDocument } from "@/lib/hooks/useJobs";
+import {
+  jobFormSchema,
+  jobFormDefaultValues,
+  jobDocumentToFormInput,
+  toJobPayload,
+  type JobFormInput,
+} from "@/lib/validation/jobFormSchema";
 import { Header } from "@/app/components/layout/Header";
 import { Input } from "@/app/components/ui/Input";
 import { Select } from "@/app/components/ui/Select";
 import { Button } from "@/app/components/ui/Button";
 import { STATUS_CONFIG } from "@/lib/constants/statusConfig";
 import { ProtectedRoute } from "@/app/components/layout/ProtectedRoute";
-
-const jobFormSchema = z.object({
-  title: z.string().min(1, "চাকরির পদের নাম আবশ্যক"),
-  organisation: z.string().min(1, "প্রতিষ্ঠানের নাম আবশ্যক"),
-  category: z.enum(["govt", "non-govt"]),
-  deadline: z.string().min(1, "আবেদনের শেষ তারিখ আবশ্যক"),
-  status: z.enum([
-    "not_applied",
-    "applied",
-    "skipped",
-    "given_exam",
-    "passed",
-    "failed",
-    "interviewed",
-  ]),
-  source_url: z
-    .string()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        try {
-          new URL(val);
-          return true;
-        } catch {
-          return false;
-        }
-      },
-      { message: "সঠিক লিংক প্রদান করুন (যেমন: https://example.com)" },
-    )
-    .optional()
-    .or(z.literal("")),
-  salary_range: z.string().optional().or(z.literal("")),
-  notes: z.string().optional().or(z.literal("")),
-  credentials: z
-    .object({
-      username: z.string().optional().or(z.literal("")),
-      password: z.string().optional().or(z.literal("")),
-    })
-    .optional(),
-});
-
-type JobFormInput = z.infer<typeof jobFormSchema>;
 
 export default function JobEditPage({
   params,
@@ -82,20 +46,8 @@ export default function JobEditPage({
     formState: { errors },
   } = useForm<JobFormInput>({
     resolver: zodResolver(jobFormSchema),
-    defaultValues: {
-      title: "",
-      organisation: "",
-      category: "non-govt",
-      deadline: "",
-      status: "not_applied",
-      source_url: "",
-      salary_range: "",
-      notes: "",
-      credentials: {
-        username: "",
-        password: "",
-      },
-    },
+    defaultValues: jobFormDefaultValues,
+    mode: "onBlur",
   });
 
   const categoryValue = useWatch({ control, name: "category" });
@@ -109,23 +61,9 @@ export default function JobEditPage({
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data() as Omit<JobDocument, "id">;
-          const jobData: JobDocument = {
-            id: snapshot.id,
-            title: data.title,
-            organisation: data.organisation,
-            category: data.category,
-            deadline: data.deadline,
-            status: data.status,
-            source_url: data.source_url || "",
-            salary_range: data.salary_range || "",
-            notes: data.notes || "",
-            credentials: {
-              username: data.credentials?.username || "",
-              password: data.credentials?.password || "",
-            },
-          };
+          const jobData: JobDocument = { id: snapshot.id, ...data };
           setJob(jobData);
-          reset(jobData);
+          reset(jobDocumentToFormInput(data));
         } else {
           setJob(null);
         }
@@ -145,30 +83,8 @@ export default function JobEditPage({
     if (!id) return;
     setSaving(true);
 
-    const payload: Partial<JobDocument> = {
-      title: data.title,
-      organisation: data.organisation,
-      category: data.category,
-      deadline: data.deadline,
-      status: data.status,
-      source_url: data.source_url || "",
-      salary_range: data.salary_range || "",
-      notes: data.notes || "",
-      credentials: {
-        username: data.credentials?.username || "",
-        password: data.credentials?.password || "",
-      },
-    };
-
-    if (data.category !== "govt") {
-      payload.credentials = {
-        username: "",
-        password: "",
-      };
-    }
-
     try {
-      await updateJob(id, payload);
+      await updateJob(id, toJobPayload(data));
       toast.success("চাকরির তথ্য সফলভাবে আপডেট হয়েছে ✓");
       router.push(`/job/${id}`);
     } catch {
@@ -245,20 +161,30 @@ export default function JobEditPage({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             <div className="bg-white border border-gray-150 shadow-xs rounded-2xl p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   label="আবেদনের নাম / পদের নাম"
                   placeholder="যেমন: অ্যাসিস্ট্যান্ট প্রোগ্রামার"
+                  maxLength={200}
                   error={errors.title?.message}
                   {...register("title")}
                 />
                 <Input
                   label="প্রতিষ্ঠান বা অর্গানাইজেশন"
                   placeholder="যেমন: বাংলাদেশ ব্যাংক"
+                  maxLength={200}
                   error={errors.organisation?.message}
                   {...register("organisation")}
+                />
+                <Input
+                  label="পদ সংখ্যা"
+                  placeholder="যেমন: ০১ বা ৫"
+                  inputMode="numeric"
+                  maxLength={20}
+                  error={errors.position_number?.message}
+                  {...register("position_number")}
                 />
               </div>
 
@@ -288,8 +214,9 @@ export default function JobEditPage({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="সার্কুলার লিঙ্ক / রেফারেন্স URL"
-                  type="text"
+                  type="url"
                   placeholder="https://example.com/circular"
+                  maxLength={500}
                   error={errors.source_url?.message}
                   {...register("source_url")}
                 />
@@ -297,6 +224,7 @@ export default function JobEditPage({
                   label="বেতন বা রেঞ্জ"
                   type="text"
                   placeholder="যেমন: ২২,০০০ - ৫৩,০৬০ টাকা"
+                  maxLength={100}
                   error={errors.salary_range?.message}
                   {...register("salary_range")}
                 />
@@ -308,12 +236,20 @@ export default function JobEditPage({
                 </label>
                 <textarea
                   rows={4}
+                  maxLength={2000}
                   placeholder="পরীক্ষার সিলেবাস, প্রবেশপত্র প্রাপ্তি ইত্যাদি সম্পর্কিত তথ্য..."
-                  className={
-                    "w-full px-3 py-2 bg-white border border-gray-300 focus:ring-blue-500 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:border-transparent transition-all duration-200 font-sans"
-                  }
+                  className={`w-full px-3 py-2 bg-white border rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:border-transparent transition-all duration-200 font-sans ${
+                    errors.notes
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-blue-500"
+                  }`}
                   {...register("notes")}
                 />
+                {errors.notes && (
+                  <p className="mt-1 text-xs text-red-600 font-sans">
+                    {errors.notes.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -331,6 +267,7 @@ export default function JobEditPage({
                   <Input
                     label="ইউজারনেম / মোবাইল নম্বর"
                     placeholder="যেমন: USER12345"
+                    maxLength={100}
                     error={errors.credentials?.username?.message}
                     {...register("credentials.username")}
                   />
@@ -339,6 +276,7 @@ export default function JobEditPage({
                       label="পাসওয়ার্ড"
                       type={showPassword ? "text" : "password"}
                       placeholder="যেমন: pass@123"
+                      maxLength={100}
                       error={errors.credentials?.password?.message}
                       className="pr-10"
                       {...register("credentials.password")}
