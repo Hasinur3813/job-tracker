@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ChevronDown } from "lucide-react";
 import { STATUS_CONFIG, JobStatusType } from "@/lib/constants/statusConfig";
 
 interface StatusDropdownProps {
@@ -14,49 +15,35 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
   onChange,
   disabled = false,
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange(e.target.value as JobStatusType);
+  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange(event.target.value as JobStatusType);
   };
 
+  const current = STATUS_CONFIG[currentStatus] ?? STATUS_CONFIG.not_applied;
+
   return (
-    <div className="relative inline-block text-left">
+    <div className="relative w-full text-left">
+      <span
+        className={`pointer-events-none absolute left-3 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full ${current.dot}`}
+        aria-hidden="true"
+      />
       <select
         value={currentStatus}
         onChange={handleChange}
         disabled={disabled}
-        className={`
-          appearance-none
-          px-3 py-1.5 pr-8
-          bg-white hover:bg-gray-50
-          border border-gray-200
-          text-gray-700 font-sans text-xs font-semibold
-          rounded-lg
-          focus:outline-hidden
-          focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
-          cursor-pointer
-          transition-all duration-200
-          disabled:opacity-50 disabled:cursor-not-allowed
-        `}
+        aria-label="আবেদনের স্ট্যাটাস পরিবর্তন করুন"
+        className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-7 pr-8 text-xs font-semibold text-slate-700 transition-all hover:border-slate-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {Object.entries(STATUS_CONFIG).map(([value, info]) => (
-          <option
-            key={value}
-            value={value}
-            className="text-gray-900 font-sans font-medium text-sm"
-          >
+          <option key={value} value={value} className="text-slate-900">
             {info.label}
           </option>
         ))}
       </select>
-      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400">
-        <svg
-          className="h-4 w-4 fill-current"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-        >
-          <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-        </svg>
-      </div>
+      <ChevronDown
+        size={14}
+        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+      />
     </div>
   );
 };

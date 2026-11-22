@@ -1,71 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   collection,
   onSnapshot,
-  query,
-  orderBy,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp,
 } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase/config";
+import { db } from "@/lib/firebase/config";
+import {
+  getFirestoreErrorMessage,
+  reportFirestoreError,
+} from "@/lib/firebase/firestoreErrors";
 import { useAuth } from "./useAuth";
-
-export enum OperationType {
-  CREATE = "create",
-  UPDATE = "update",
-  DELETE = "delete",
-  LIST = "list",
-  GET = "get",
-  WRITE = "write",
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-    tenantId?: string | null;
-    providerInfo?: {
-      providerId?: string | null;
-      email?: string | null;
-    }[];
-  };
-}
-
-function handleFirestoreError(
-  error: unknown,
-  operationType: OperationType,
-  path: string | null,
-) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo:
-        auth.currentUser?.providerData?.map((provider) => ({
-          providerId: provider.providerId,
-          email: provider.email,
-        })) || [],
-    },
-    operationType,
-    path,
-  };
-  console.error("Firestore Error: ", JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
 
 export interface JobDocument {
   id: string;
@@ -94,113 +39,49 @@ export interface JobDocument {
 }
 
 export function useJobs() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState<JobDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (!currentUser) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setJobs([]);
+      setError(null);
       setLoading(false);
       return;
     }
 
     const path = `users/${currentUser.uid}/jobs`;
     const jobsRef = collection(db, "users", currentUser.uid, "jobs");
-    const jobsQuery = query(jobsRef, orderBy("deadline", "asc"));
 
     const unsubscribe = onSnapshot(
-      jobsQuery,
+      jobsRef,
       (snapshot) => {
-        try {
-          const jobsList: JobDocument[] = snapshot.docs.map(
+        setJobs(
+          snapshot.docs.map(
             (doc) =>
               ({
                 ...doc.data(),
                 id: doc.id,
               }) as JobDocument,
-          );
-          setJobs(jobsList);
-          setLoading(false);
-        } catch (err) {
-          handleFirestoreError(err, OperationType.LIST, path);
-        }
+          ),
+        );
+        setError(null);
+        setLoading(false);
       },
-      (err) => {
-        handleFirestoreError(err, OperationType.LIST, path);
+      (listError) => {
+        reportFirestoreError(listError, "list", path);
+        setError(getFirestoreErrorMessage("list"));
+        setLoading(false);
       },
     );
 
     return unsubscribe;
-  }, [currentUser]);
+  }, [currentUser, authLoading]);
 
-  const addJob = async (jobData: Omit<JobDocument, "id">) => {
-    if (!currentUser) throw new Error("No user logged in");
-    const path = `users/${currentUser.uid}/jobs`;
-
-    try {
-      const jobsRef = collection(db, "users", currentUser.uid, "jobs");
-      const docRef = await addDoc(jobsRef, {
-        ...jobData,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-      });
-      return docRef;
-    } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, path);
-    }
-  };
-
-  const updateJob = async (jobId: string, updates: Partial<JobDocument>) => {
-    if (!currentUser) throw new Error("No user logged in");
-    const path = `users/${currentUser.uid}/jobs/${jobId}`;
-
-    try {
-      const jobRef = doc(db, "users", currentUser.uid, "jobs", jobId);
-      const { ...updateData } = updates;
-      await updateDoc(jobRef, {
-        ...updateData,
-        updated_at: serverTimestamp(),
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, path);
-    }
-  };
-
-  const updateStatus = async (jobId: string, status: string) => {
-    if (!currentUser) throw new Error("No user logged in");
-    const path = `users/${currentUser.uid}/jobs/${jobId}`;
-
-    try {
-      const jobRef = doc(db, "users", currentUser.uid, "jobs", jobId);
-      await updateDoc(jobRef, {
-        status,
-        updated_at: serverTimestamp(),
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, path);
-    }
-  };
-
-  const deleteJob = async (jobId: string) => {
-    if (!currentUser) throw new Error("No user logged in");
-    const path = `users/${currentUser.uid}/jobs/${jobId}`;
-
-    try {
-      const jobRef = doc(db, "users", currentUser.uid, "jobs", jobId);
-      await deleteDoc(jobRef);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, path);
-    }
-  };
-
-  return {
-    jobs,
-    loading,
-    addJob,
-    updateJob,
-    updateStatus,
-    deleteJob,
-  };
+  return { jobs, loading, error };
 }

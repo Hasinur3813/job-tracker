@@ -4,301 +4,581 @@ import React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  Layers,
-  Sparkles,
-  Lock,
-  Clock,
-  CheckCircle2,
-  TrendingUp,
-  ShieldCheck,
   ArrowRight,
+  BellRing,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  KeyRound,
+  Layers,
+  LayoutDashboard,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Wallet,
   Zap,
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Header } from "@/app/components/layout/Header";
+import { Logo } from "@/app/components/brand/Logo";
+
+const features = [
+  {
+    icon: <KeyRound size={18} />,
+    tone: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    title: "ক্রেডেনশিয়াল ভল্ট",
+    description:
+      "সরকারি পোর্টালের ইউজারনেম ও পাসওয়ার্ড এক জায়গায়—এক ক্লিকে কপি করুন, যখন দরকার।",
+  },
+  {
+    icon: <Clock size={18} />,
+    tone: "bg-amber-50 text-amber-600 border-amber-100",
+    title: "ডেডলাইন সতর্কবার্তা",
+    description:
+      "কোন আবেদনের সময় শেষ হচ্ছে, কত দিন বাকি—কালার-কোডেড ভিজ্যুয়ালে এক নজরে।",
+  },
+  {
+    icon: <Layers size={18} />,
+    tone: "bg-brand-50 text-brand-600 border-brand-100",
+    title: "স্ট্যাটাস ফ্লো",
+    description:
+      "আবেদন থেকে ভাইভা—প্রতিটি ধাপ ট্র্যাক করুন। কোনটায় কী করতে হবে আর ভাবতে হবে না।",
+  },
+  {
+    icon: <TrendingUp size={18} />,
+    tone: "bg-violet-50 text-violet-600 border-violet-100",
+    title: "স্মার্ট ফিল্টার",
+    description:
+      "সরকারি/বেসরকারি, স্ট্যাটাস আর ডেডলাইন অনুযায়ী মুহূর্তেই খুঁজে নিন যেকোনো আবেদন।",
+  },
+];
+
+const steps = [
+  {
+    number: "০১",
+    title: "অ্যাকাউন্ট খুলুন",
+    description: "Google দিয়ে এক ক্লিকে, অথবা ইমেইল দিয়ে ৩০ সেকেন্ডে।",
+  },
+  {
+    number: "০২",
+    title: "আবেদন যোগ করুন",
+    description: "প্রতিষ্ঠান, পদ, ডেডলাইন আর পোর্টালের লগইন তথ্য লিখে রাখুন।",
+  },
+  {
+    number: "০৩",
+    title: "শান্ত থাকুন",
+    description: "ডেডলাইনের আগেই সতর্কবার্তা পাবেন—কিছুই আর মিস হবে না।",
+  },
+];
+
+const trustPoints = [
+  "Firebase Authentication",
+  "Google সাইন-ইন",
+  "রিয়েল-টাইম সিঙ্ক",
+  "সম্পূর্ণ ফ্রি",
+];
+
+function GoogleIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.57 5.57 0 0 1-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09A11.99 11.99 0 0 0 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.27 14.29a7.2 7.2 0 0 1 0-4.58V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.09Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A11.99 11.99 0 0 0 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75Z"
+      />
+    </svg>
+  );
+}
+
+function MiniJobCard({
+  title,
+  organisation,
+  deadlineline,
+  urgency,
+}: {
+  title: string;
+  organisation: string;
+  deadlineline: string;
+  urgency: "soon" | "week" | "normal";
+}) {
+  const tone = {
+    soon: { bar: "bg-linear-to-r from-rose-400 to-rose-500", chip: "text-rose-600 bg-rose-50" },
+    week: { bar: "bg-linear-to-r from-amber-400 to-accent-400", chip: "text-amber-600 bg-amber-50" },
+    normal: { bar: "bg-linear-to-r from-brand-400 to-brand-500", chip: "text-brand-600 bg-brand-50" },
+  }[urgency];
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-soft">
+      <span className={`absolute inset-y-0 left-0 w-1 ${tone.bar}`} />
+      <div className="pl-1.5">
+        <p className="truncate text-[13px] font-bold text-slate-900">{title}</p>
+        <p className="mt-0.5 truncate text-[11px] text-slate-400">
+          {organisation}
+        </p>
+        <span
+          className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${tone.chip}`}
+        >
+          {deadlineline}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const { currentUser } = useAuth();
 
-  const features = [
-    {
-      icon: <Lock className="text-emerald-600 w-5 h-5" />,
-      title: "ক্রেডেনশিয়াল ভল্ট (Credentials Vault)",
-      desc: "সরকারি চাকরির সরকারি পোর্টালের (যেমন: Teletalk Alljobs) ইউজারনেম এবং পাসওয়ার্ড নিরাপদ উপায়ে সংরক্ষণ করুন। সরাসরি হোম ড্যাশবোর্ড থেকে এক ক্লিকে অ্যাক্সেস ও কপি করুন।",
-    },
-    {
-      icon: <Clock className="text-amber-600 w-5 h-5" />,
-      title: "স্মার্ট দিন গণনাকারী ও রিমাইন্ডার",
-      desc: "আবেদনের শেষ ডেডলাইন কত দিন বাকি আছে তা সরাসরি ড্যাশবোর্ডে কালার-কোডেড ভিজ্যুয়াল ওয়ার্নিং সহ দেখতে পাবেন। অতিরিক্ত চাপ ছাড়া আবেদন সম্পন্ন করুন।",
-    },
-    {
-      icon: <Layers className="text-blue-600 w-5 h-5" />,
-      title: "অগ্রগতি ট্র্যাকার (Status Flow)",
-      desc: "আবেদন করা হয়নি, ইমেইল বা কার্ড সাবমিট করা হয়েছে, পরীক্ষা সম্পন্ন, ভাইভা অবশিষ্টাংশসহ প্রতিটি পর্যায় নিখুঁত ট্র্যাকিং মোডে রাখুন।",
-    },
-    {
-      icon: <TrendingUp className="text-indigo-600 w-5 h-5" />,
-      title: "ক্যাটাগরি-ভিত্তি ফিল্টারিং",
-      desc: "সরকারি (Govt) ও বেসরকারি (Non-Govt) আলাদা সেকশনে আপনার কাজের ট্র্যাক রাখুন। মাল্টিপল কলাম ফিল্টার ও সার্চ দিয়ে যেকোনো চাকুরি মুহূর্তে খুঁজুন।",
-    },
-  ];
+  const scrollToFeatures = () => {
+    document
+      .getElementById("features-section")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans select-none">
-      {/* Top Navbar */}
+    <div className="flex min-h-screen flex-col bg-canvas">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-white border-b border-gray-100 py-16 sm:py-24 text-left">
-        {/* Glow Effects */}
-        <div className="absolute top-0 left-1/4 w-80 h-80 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
-        <div className="absolute bottom-10 right-1/4 w-72 h-72 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
+      <main className="flex-1">
+        <section className="relative overflow-hidden">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-32 top-0 h-[30rem] w-[30rem] rounded-full bg-brand-200/50 blur-3xl" />
+            <div className="absolute -right-24 top-24 h-[26rem] w-[26rem] rounded-full bg-accent-200/40 blur-3xl" />
+            <div className="absolute inset-0 bg-grid-light opacity-50 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
+          </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Hero text */}
-            <div className="lg:col-span-7 flex flex-col items-start space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-700 text-xs font-bold"
-              >
-                <Sparkles size={14} className="animate-spin text-blue-600" />
-                <span>চাকরি আবেদন ব্যবস্থাপনার আধুনিক সমাধান</span>
-              </motion.div>
+          <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
+            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_minmax(0,440px)] lg:gap-16">
+              <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45 }}
+                  className="inline-flex items-center gap-2 rounded-full border border-brand-200/70 bg-white/80 px-3 py-1 text-[11px] font-bold text-brand-700 shadow-soft backdrop-blur-sm"
+                >
+                  <Sparkles size={13} className="text-accent-500" />
+                  চাকরি আবেদন ব্যবস্থাপনার আধুনিক, শান্ত সমাধান
+                </motion.div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight"
-              >
-                আপনার সব চাকরি আবেদন <br />
-                <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600">
-                  গুছিয়ে রাখুন এক জায়গায়
-                </span>
-              </motion.h1>
+                <motion.h1
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.08 }}
+                  className="mt-5 text-[2.35rem] font-black leading-[1.16] tracking-tight text-slate-900 sm:text-5xl"
+                >
+                  আপনার সব চাকরি আবেদন
+                  <br />
+                  <span className="bg-linear-to-r from-brand-700 via-brand-500 to-violet-500 bg-clip-text text-transparent">
+                    গুছিয়ে রাখুন এক জায়গায়।
+                  </span>
+                </motion.h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-lg text-gray-650 max-w-xl leading-relaxed"
-              >
-                সরকারি বা বেসরকারি চাকরির আবেদনের লিংক, ইউজার আইডি, পাসওয়ার্ড,
-                বেতনের তথ্য এবং পরীক্ষার ট্র্যাকিং স্ট্যাটাস নিখুঁতভাবে সংরক্ষণ
-                করুন।
-              </motion.p>
+                <motion.p
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.16 }}
+                  className="mt-5 max-w-xl text-[15px] leading-8 text-slate-500"
+                >
+                  সরকারি থেকে বেসরকারি—আবেদনের লিংক, পোর্টালের লগইন তথ্য, বেতন
+                  আর পরীক্ষার স্ট্যাটাস সব এক ড্যাশবোর্ডে। ডেডলাইন মিস করা আর
+                  ভুলে যাওয়ার দিন শেষ।
+                </motion.p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-wrap gap-4 w-full sm:w-auto"
-              >
-                {currentUser ? (
-                  <Link
-                    href="/dashboard"
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-blue-200/50 transition-all cursor-pointer group"
-                  >
-                    <span>আপনার ড্যাশবোর্ডে যান</span>
-                    <ArrowRight
-                      size={16}
-                      className="group-hover:translate-x-1 transition-transform"
-                    />
-                  </Link>
-                ) : (
-                  <>
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.24 }}
+                  className="mt-7 flex flex-col gap-3 sm:flex-row"
+                >
+                  {currentUser ? (
                     <Link
-                      href="/auth"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-blue-200/50 transition-all cursor-pointer group"
+                      href="/dashboard"
+                      className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-sm font-bold text-white shadow-glow transition-all hover:-translate-y-0.5 hover:bg-brand-700"
                     >
-                      <span>এখনই যাত্রা শুরু করুন (ফ্রি)</span>
+                      <LayoutDashboard size={16} />
+                      আপনার ড্যাশবোর্ডে যান
                       <ArrowRight
                         size={16}
-                        className="group-hover:translate-x-1 transition-transform"
+                        className="transition-transform group-hover:translate-x-1"
                       />
                     </Link>
-                    <button
-                      onClick={() => {
-                        const el = document.getElementById("features-section");
-                        el?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition-all cursor-pointer"
-                    >
-                      ফিচারসমূহ দেখুন
-                    </button>
-                  </>
-                )}
-              </motion.div>
+                  ) : (
+                    <>
+                      <Link
+                        href="/auth"
+                        className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-sm font-bold text-white shadow-glow transition-all hover:-translate-y-0.5 hover:bg-brand-700"
+                      >
+                        ফ্রি অ্যাকাউন্ট খুলুন
+                        <ArrowRight
+                          size={16}
+                          className="transition-transform group-hover:translate-x-1"
+                        />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={scrollToFeatures}
+                        className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-6 text-sm font-semibold text-slate-700 shadow-soft backdrop-blur-sm transition-all hover:border-slate-300 hover:text-slate-900"
+                      >
+                        ফিচারসমূহ দেখুন
+                      </button>
+                    </>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.34 }}
+                  className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2"
+                >
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
+                    <GoogleIcon size={12} />
+                    Google দিয়ে সাইন-ইন
+                  </span>
+                  {trustPoints
+                    .filter((point) => point !== "Google সাইন-ইন")
+                    .map((point) => (
+                      <span
+                        key={point}
+                        className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-slate-500"
+                      >
+                        <CheckCircle2 size={12} className="text-emerald-500" />
+                        {point}
+                      </span>
+                    ))}
+                </motion.div>
+              </div>
 
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="grid grid-cols-3 gap-6 pt-6 border-t border-gray-100 w-full"
-              >
-                <div>
-                  <div className="text-2xl sm:text-3xl font-black text-blue-600">
-                    ১০০%
-                  </div>
-                  <div className="text-xs text-gray-400 font-sans mt-0.5">
-                    নিরাপদ ডিক্রিপশন
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl sm:text-3xl font-black text-indigo-600">
-                    ১-ক্লিক
-                  </div>
-                  <div className="text-xs text-gray-400 font-sans mt-0.5">
-                    ক্রেডেনশিয়াল কপি
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-600">
-                    ০৳
-                  </div>
-                  <div className="text-xs text-gray-400 font-sans mt-0.5">
-                    আজীবন ফ্রি
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Visual Screen Widget Mockup */}
-            <div className="lg:col-span-5 relative mt-6 lg:mt-0">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-                className="relative bg-white border border-gray-150 rounded-2xl shadow-xl overflow-hidden p-6 text-left"
+                transition={{ duration: 0.55, delay: 0.15 }}
+                className="relative"
               >
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 bg-red-400 rounded-full inline-block"></span>
-                    <span className="w-3 h-3 bg-amber-400 rounded-full inline-block"></span>
-                    <span className="w-3 h-3 bg-green-400 rounded-full inline-block"></span>
+                <div
+                  aria-hidden="true"
+                  className="absolute -inset-4 rounded-4xl bg-linear-to-br from-brand-300/30 via-transparent to-accent-300/30 blur-2xl"
+                />
+                <div className="relative overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-4 shadow-lift backdrop-blur-xl sm:p-5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+                    </div>
+                    <span className="rounded-md bg-slate-50 px-2 py-0.5 font-mono text-[9px] text-slate-400">
+                      chakri-tracker · ড্যাশবোর্ড
+                    </span>
                   </div>
-                  <div className="px-3 py-0.5 bg-gray-100 rounded-md text-[10px] text-gray-400 font-mono">
-                    chakri-tracker.web.app
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] text-slate-400">শুভ সন্ধ্যা</p>
+                      <p className="text-sm font-black text-slate-900">
+                        আপনার ৩টি আবেদন চলছে
+                      </p>
+                    </div>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-brand-500 to-violet-500 text-[11px] font-bold text-white">
+                      রা
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {[
+                      { label: "মোট", value: "১২", cls: "text-slate-900" },
+                      { label: "চলমান", value: "৩", cls: "text-brand-600" },
+                      { label: "এই সপ্তাহে", value: "২", cls: "text-rose-500" },
+                    ].map((stat) => (
+                      <div
+                        key={stat.label}
+                        className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 text-center"
+                      >
+                        <p className={`text-lg font-black ${stat.cls}`}>
+                          {stat.value}
+                        </p>
+                        <p className="text-[9px] font-semibold text-slate-400">
+                          {stat.label}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    <MiniJobCard
+                      title="সহকারী প্রোগ্রামার"
+                      organisation="বাংলাদেশ ব্যাংক · সরকারি"
+                      deadlineline="৩ দিন বাকি"
+                      urgency="soon"
+                    />
+                    <MiniJobCard
+                      title="অফিসার (জেনারেল)"
+                      organisation="সিটি ব্যাংক পিএলসি"
+                      deadlineline="৬ দিন বাকি"
+                      urgency="week"
+                    />
+                    <MiniJobCard
+                      title="সিনিয়র অ্যাসিস্ট্যান্ট ম্যানেজার"
+                      organisation="NPCL · সরকারি"
+                      deadlineline="১৮ দিন বাকি"
+                      urgency="normal"
+                    />
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-2.5 text-[10px] font-medium text-emerald-700">
+                    <ShieldCheck size={14} className="shrink-0" />
+                    Firestore সিকিউরিটি রুলসে আপনার ডেটা সুরক্ষিত
                   </div>
                 </div>
 
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 font-mono">
-                  সরাসরি কাজের প্রিভিউ
-                </h4>
-                <div className="bg-linear-to-br from-blue-50/50 to-indigo-50/10 border border-blue-100/80 rounded-xl p-4 relative mb-4">
-                  <span className="inline-flex px-2 py-0.5 bg-blue-100/70 border border-blue-200 text-[10px] font-bold rounded-full text-blue-700 mb-2">
-                    সরকারি চাকরি (Govt)
+                <div className="absolute -bottom-5 -left-4 hidden items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/95 px-3 py-2 shadow-lift backdrop-blur-sm sm:flex">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                    <BellRing size={13} />
                   </span>
-                  <span className="inline-flex px-2 py-0.5 bg-amber-100/70 border border-amber-200 text-[10px] font-semibold rounded-full text-amber-700 ml-1.5 mb-2">
-                    পরীক্ষা বাকি (Exam)
-                  </span>
-                  <h5 className="font-bold text-gray-900 text-base leading-tight">
-                    নিউক্লিয়ার পাওয়ার প্ল্যান্ট কোম্পানি বাংলাদেশ লি.
-                  </h5>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-snug">
-                    পদের নাম: সিনিয়র অ্যাসিস্ট্যান্ট ম্যানেজার
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  <ShieldCheck
-                    size={16}
-                    className="text-emerald-500 shrink-0"
-                  />
-                  <span>
-                    এটি সম্পূর্ণ নিরাপদ ফায়ারবেস সিস্টেমে সংরক্ষিত থাকে।
+                  <span className="text-[10px] font-bold text-slate-700">
+                    ডেডলাইন রিমাইন্ডার সক্রিয়
                   </span>
                 </div>
               </motion.div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Detail Section */}
-      <section
-        id="features-section"
-        className="py-20 bg-white border-b border-gray-100 text-left"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight sm:text-4xl">
-              রিয়েল-টাইম চাকরি ক্যারিয়ার হেল্পার
+        <section className="border-y border-slate-200/60 bg-white/70 py-3">
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-4 text-[11px] font-semibold text-slate-400 sm:px-6">
+            {trustPoints.map((point) => (
+              <span key={point} className="inline-flex items-center gap-1.5">
+                <CheckCircle2 size={13} className="text-emerald-500" />
+                {point}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="features-section"
+          className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand-600">
+              Features
+            </span>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-[2.3rem] sm:leading-tight">
+              আবেদনের হিসাব রাখার কাজটা
+              <br className="hidden sm:block" /> এখন অনেক সহজ
             </h2>
-            <p className="mt-3 text-lg text-gray-500">
-              নিশ্চিন্তে চাকরির আবেদন করুন, ডেটা সংরক্ষণ এবং সময়ের পূর্বে আবেদন
-              ট্র্যাকিং করুন নিরাপদে।
+            <p className="mt-3 text-sm leading-7 text-slate-500">
+              প্রয়োজনীয় সবকিছু এক জায়গায়—অতিরিক্ত কোনো জটিলতা ছাড়াই।
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((item, idx) => (
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature, index) => (
               <motion.div
-                key={idx}
-                className="bg-gray-50 hover:bg-white border hover:border-blue-100 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col items-start gap-4"
-                whileHover={{ scale: 1.01 }}
+                key={feature.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.4, delay: index * 0.06 }}
+                className="group rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card transition-all hover:-translate-y-1 hover:border-brand-200 hover:shadow-lift"
               >
-                <div className="p-3 bg-white border border-gray-100 shadow-sm rounded-xl">
-                  {item.icon}
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 font-sans mt-2">
-                  {item.title}
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl border ${feature.tone}`}
+                >
+                  {feature.icon}
+                </span>
+                <h3 className="mt-4 text-sm font-bold text-slate-900">
+                  {feature.title}
                 </h3>
-                <p className="text-sm text-gray-650 leading-relaxed font-sans">
-                  {item.desc}
+                <p className="mt-2 text-xs leading-6 text-slate-500">
+                  {feature.description}
                 </p>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer Promo */}
-      <section className="py-16 bg-blue-50/20 border-b border-gray-100 text-left">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="bg-linear-to-br from-blue-700 to-indigo-800 rounded-3xl p-8 sm:p-12 text-white relative overflow-hidden shadow-xl">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/30 rounded-full blur-3xl"></div>
-            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-              <div className="flex-1 space-y-4">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-blue-200">
-                  <ShieldCheck size={14} className="text-green-300" />
-                  <span>নিরাপত্তা নিশ্চিতকরণ</span>
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-                  পাসওয়ার্ড ও ক্রেডেন্সিয়াল সুরক্ষায় দ্বিমুখী সুরক্ষা স্তর।
-                </h3>
-                <p className="text-sm text-blue-100 leading-relaxed">
-                  আমরা সরাসরি আপনার ফায়ারবেস সিকিউরিটি রুলস-এর মাধ্যমে ডেটা
-                  ব্লক করে রেখেছি। শুধুমাত্র আপনি নিজের লগইন ইমেইল এবং
-                  পাসওয়ার্ড দিয়ে প্রবেশ করলেই ডেটা অ্যাক্সেস করতে পারবেন।
+        <section className="border-y border-slate-200/60 bg-white/70 py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
+              <div>
+                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand-600">
+                  How it works
+                </span>
+                <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
+                  তিন ধাপে শুরু
+                </h2>
+                <p className="mt-3 max-w-md text-sm leading-7 text-slate-500">
+                  কোনো জটিল সেটআপ নেই। অ্যাকাউন্ট খুলে প্রথম আবেদনটি যোগ করুন—
+                  বাকিটা ড্যাশবোর্ড সামলে নেবে।
                 </p>
-                <div className="flex flex-wrap gap-4 pt-2">
-                  <span className="flex items-center gap-1.5 text-xs text-blue-200">
-                    <CheckCircle2 size={13} className="text-green-300" />
-                    ফায়ারস্টোর সিকিউরিটি লকিং
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs text-blue-200">
-                    <CheckCircle2 size={13} className="text-green-300" />
-                    এন্ড-টু-এন্ড এনক্রিপশন
-                  </span>
-                </div>
+                <Link
+                  href={currentUser ? "/dashboard" : "/auth"}
+                  className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 transition-colors hover:text-brand-700"
+                >
+                  {currentUser ? "ড্যাশবোর্ড খুলুন" : "বিনামূল্যে শুরু করুন"}
+                  <ArrowRight size={15} />
+                </Link>
               </div>
-              <div className="shrink-0 bg-white/10 p-6 rounded-2xl border border-white/10 text-center w-full md:w-auto max-w-xs">
-                <Zap
-                  size={36}
-                  className="text-yellow-300 mx-auto mb-3 animate-pulse"
-                />
-                <p className="text-sm font-bold text-white">
-                  সম্পূর্ণ নিরাপদ এবং সুরক্ষিত
+
+              <ol className="space-y-3">
+                {steps.map((step) => (
+                  <li
+                    key={step.number}
+                    className="flex items-start gap-4 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 font-mono text-sm font-black text-brand-600">
+                      {step.number}
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        {step.title}
+                      </p>
+                      <p className="mt-1 text-xs leading-6 text-slate-500">
+                        {step.description}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="relative overflow-hidden rounded-4xl bg-[#120f2e] p-7 text-white shadow-lift sm:p-10">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+              <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand-500/25 blur-3xl" />
+              <div className="absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-accent-500/10 blur-3xl" />
+              <div className="absolute inset-0 bg-grid opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
+            </div>
+
+            <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-brand-200">
+                  <ShieldCheck size={13} className="text-emerald-400" />
+                  নিরাপত্তা, কোনো বাড়তি চাপ ছাড়াই
+                </span>
+                <h2 className="mt-4 max-w-xl text-2xl font-black leading-snug tracking-tight sm:text-[1.8rem]">
+                  আপনার ডেটা শুধু আপনার—
+                  <br />
+                  Firestore সিকিউরিটি রুলসে সুরক্ষিত।
+                </h2>
+                <p className="mt-3 max-w-xl text-sm leading-7 text-white/50">
+                  প্রতিটি আবেদন আপনার নিজের অ্যাকাউন্টের ডকুমেন্টে থাকে; অন্য
+                  কোনো ব্যবহারকারী তা দেখতে পারে না। Google বা ইমেইল—দুভাবেই
+                  লগইন করা যায়, আর যেকোনো সময় অ্যাকাউন্ট মুছে ফেলা যায়।
                 </p>
+
+                <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+                  {[
+                    "শুধু আপনার অ্যাকাউন্টে অ্যাক্সেস",
+                    "Firebase Authentication",
+                    "রিয়েল-টাইম সিঙ্ক",
+                    "ইমেইল/পাসওয়ার্ড রিসেট",
+                  ].map((item) => (
+                    <span
+                      key={item}
+                      className="flex items-center gap-2 text-xs text-white/70"
+                    >
+                      <CheckCircle2 size={14} className="shrink-0 text-emerald-400" />
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="mt-5 max-w-xl rounded-xl border border-white/10 bg-white/[0.04] p-3 text-[10px] leading-5 text-white/35">
+                  স্বচ্ছতার জন্য: পোর্টালের ক্রেডেনশিয়াল এন্ড-টু-এন্ড
+                  এনক্রিপ্টেড নয়—এগুলো আপনার ব্যক্তিগত Firestore
+                  অ্যাকাউন্টে সংরক্ষিত থাকে, তাই কারও সঙ্গে শেয়ার করবেন না।
+                </p>
+              </div>
+
+              <div className="flex w-full shrink-0 flex-col gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-sm lg:w-60">
+                <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                  <Wallet size={14} className="text-accent-300" />
+                  আজীবন ফ্রি
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                  <Zap size={14} className="text-accent-300" />
+                  ৩০ সেকেন্ডে সেটআপ
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                  <ExternalLink size={14} className="text-accent-300" />
+                  যেকোনো ডিভাইসে
+                </div>
+                <Link
+                  href={currentUser ? "/dashboard" : "/auth"}
+                  className="mt-1 inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white text-xs font-bold text-slate-900 transition-colors hover:bg-brand-50"
+                >
+                  {currentUser ? "ড্যাশবোর্ডে যান" : "শুরু করুন"}
+                  <ArrowRight size={14} />
+                </Link>
               </div>
             </div>
           </div>
+        </section>
+
+        <section className="border-t border-slate-200/60 bg-white/70 py-14">
+          <div className="mx-auto w-full max-w-6xl px-4 text-center sm:px-6">
+            <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              আজ থেকেই গুছিয়ে রাখুন
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
+              ফ্রি, দ্রুত আর মনের মতো—আপনার পরবর্তী চাকরির আবেদনটি এখান থেকেই
+              শুরু হোক।
+            </p>
+            <div className="mt-6 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
+              <Link
+                href={currentUser ? "/job/new" : "/auth"}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-sm font-bold text-white shadow-glow transition-all hover:-translate-y-0.5 hover:bg-brand-700"
+              >
+                {currentUser ? "নতুন আবেদন যোগ করুন" : "ফ্রি অ্যাকাউন্ট খুলুন"}
+                <ArrowRight size={15} />
+              </Link>
+              <span className="text-[11px] text-slate-400">
+                Google দিয়ে এক ক্লিকেই সাইন-ইন
+              </span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-slate-200/60 bg-white/60">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6">
+          <div className="flex items-center gap-3">
+            <Logo size="sm" />
+            <span className="hidden text-[10px] text-slate-400 sm:block">
+              চাকরির আবেদন, শান্তভাবে গোছানো।
+            </span>
+          </div>
+          <div className="flex items-center gap-4 text-[11px] font-medium text-slate-400">
+            <button
+              type="button"
+              onClick={scrollToFeatures}
+              className="transition-colors hover:text-slate-700"
+            >
+              ফিচার
+            </button>
+            <Link
+              href={currentUser ? "/dashboard" : "/auth"}
+              className="transition-colors hover:text-slate-700"
+            >
+              {currentUser ? "ড্যাশবোর্ড" : "লগইন"}
+            </Link>
+            <span>© ২০২৬ চাকরি ট্র্যাকার</span>
+          </div>
         </div>
-      </section>
+      </footer>
     </div>
   );
 }

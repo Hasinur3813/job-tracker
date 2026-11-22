@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 interface ProtectedRouteProps {
@@ -11,18 +11,25 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { currentUser, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   React.useEffect(() => {
     if (!loading && !currentUser) {
-      router.push("/auth");
+      const next = pathname && pathname !== "/" ? pathname : "/dashboard";
+      router.replace(`/auth?next=${encodeURIComponent(next)}`);
     }
-  }, [currentUser, loading, router]);
+  }, [currentUser, loading, router, pathname]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-sm text-gray-500 font-sans">লোড হচ্ছে...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-canvas">
+        <div className="relative flex h-14 w-14 items-center justify-center">
+          <span className="absolute inset-0 rounded-full border-4 border-brand-100" />
+          <span className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-brand-600" />
+        </div>
+        <p className="mt-4 text-sm font-medium text-slate-500">
+          আপনার ড্যাশবোর্ড প্রস্তুত হচ্ছে...
+        </p>
       </div>
     );
   }

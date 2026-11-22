@@ -2,20 +2,28 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseISO, differenceInCalendarDays, format, isValid } from "date-fns";
 import {
   Building2,
-  Copy,
-  Eye,
-  EyeOff,
-  ExternalLink,
-  KeyRound,
+  Check,
   ChevronDown,
   ChevronUp,
+  Copy,
+  ExternalLink,
+  Eye,
+  EyeOff,
   Hash,
+  KeyRound,
+  Lock,
+  Wallet,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { JobDocument } from "@/lib/hooks/useJobs";
+import {
+  DeadlineUrgency,
+  getDeadlineInfo,
+} from "@/lib/utils/deadline";
+import { copyText } from "@/lib/utils/clipboard";
+import { getSafeHttpUrl } from "@/lib/utils/url";
 import { StatusBadge } from "../job/StatusBadge";
 import { CategoryBadge } from "../job/CategoryBadge";
 
@@ -23,302 +31,232 @@ interface JobCardProps {
   job: JobDocument;
 }
 
+const urgencyStyles: Record<
+  DeadlineUrgency,
+  { bar: string; chip: string; dot: string; text: string }
+> = {
+  none: {
+    bar: "bg-slate-200",
+    chip: "border-slate-200 bg-slate-50 text-slate-500",
+    dot: "bg-slate-300",
+    text: "text-slate-400",
+  },
+  expired: {
+    bar: "bg-slate-300",
+    chip: "border-slate-200 bg-slate-100 text-slate-500",
+    dot: "bg-slate-400",
+    text: "text-slate-400",
+  },
+  today: {
+    bar: "bg-linear-to-r from-rose-600 to-rose-400",
+    chip: "border-rose-200 bg-rose-50 text-rose-700",
+    dot: "bg-rose-500 animate-pulse",
+    text: "text-rose-600",
+  },
+  soon: {
+    bar: "bg-linear-to-r from-orange-500 to-amber-400",
+    chip: "border-orange-200 bg-orange-50 text-orange-700",
+    dot: "bg-orange-500",
+    text: "text-orange-600",
+  },
+  week: {
+    bar: "bg-linear-to-r from-amber-400 to-yellow-300",
+    chip: "border-amber-200 bg-amber-50 text-amber-700",
+    dot: "bg-amber-500",
+    text: "text-amber-600",
+  },
+  normal: {
+    bar: "bg-linear-to-r from-brand-500 to-violet-400",
+    chip: "border-slate-200 bg-slate-50 text-slate-600",
+    dot: "bg-emerald-500",
+    text: "text-brand-600",
+  },
+};
+
 export const JobCard: React.FC<JobCardProps> = ({ job }) => {
   const router = useRouter();
   const [showCreds, setShowCreds] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [copiedField, setCopiedField] = useState<
+    "username" | "password" | null
+  >(null);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let diff = -999;
-  let formattedDeadline = "তারিখ নেই";
-  let isDateValid = false;
-
-  if (job.deadline) {
-    try {
-      const deadlineDate = parseISO(job.deadline);
-      isDateValid = isValid(deadlineDate);
-      if (isDateValid) {
-        deadlineDate.setHours(0, 0, 0, 0);
-        diff = differenceInCalendarDays(deadlineDate, today);
-        formattedDeadline = format(deadlineDate, "dd MMM yyyy");
-      }
-    } catch {
-      isDateValid = false;
-    }
-  }
-
-  type UrgencyLevel = "expired" | "today" | "soon" | "week" | "normal";
-
-  let urgency: UrgencyLevel = "normal";
-  let deadlineSuffix = "";
-  if (isDateValid) {
-    if (diff < 0) {
-      urgency = "expired";
-      deadlineSuffix = "মেয়াদ শেষ";
-    } else if (diff === 0) {
-      urgency = "today";
-      deadlineSuffix = "আজই শেষ!";
-    } else if (diff <= 3) {
-      urgency = "soon";
-      deadlineSuffix = `${diff} দিন বাকি`;
-    } else if (diff <= 7) {
-      urgency = "week";
-      deadlineSuffix = `${diff} দিন বাকি`;
-    } else {
-      urgency = "normal";
-      deadlineSuffix = `${diff} দিন বাকি`;
-    }
-  }
-
-  const urgencyStyles: Record<
-    UrgencyLevel,
-    { card: string; badge: string; dot: string }
-  > = {
-    expired: {
-      card: "border-gray-200 bg-white opacity-70 hover:opacity-90",
-      badge: "bg-gray-100 text-gray-500 border-gray-200",
-      dot: "bg-gray-400",
-    },
-    today: {
-      card: "border-red-300 bg-red-50/30 shadow-red-100/50",
-      badge: "bg-red-100 text-red-700 border-red-200",
-      dot: "bg-red-500 animate-pulse",
-    },
-    soon: {
-      card: "border-orange-200 bg-orange-50/20",
-      badge: "bg-orange-100 text-orange-700 border-orange-200",
-      dot: "bg-orange-500",
-    },
-    week: {
-      card: "border-amber-200 bg-amber-50/10",
-      badge: "bg-amber-100 text-amber-700 border-amber-200",
-      dot: "bg-amber-500",
-    },
-    normal: {
-      card: "border-gray-200 bg-white hover:border-indigo-200",
-      badge: "bg-indigo-50 text-indigo-600 border-indigo-100",
-      dot: "bg-emerald-500",
-    },
-  };
-
-  const styles = urgencyStyles[urgency];
+  const deadline = getDeadlineInfo(job.deadline);
+  const styles = urgencyStyles[deadline.urgency];
+  const sourceUrl = getSafeHttpUrl(job.source_url);
 
   const hasCredentials =
     job.category === "govt" &&
-    (job.credentials?.username || job.credentials?.password);
+    Boolean(job.credentials?.username || job.credentials?.password);
 
-  const handleCopy = (text: string, label: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigator.clipboard.writeText(text);
+  const handleCopy = async (
+    text: string,
+    label: string,
+    field: "username" | "password",
+  ) => {
+    const copied = await copyText(text);
+    if (!copied) {
+      toast.error("কপি করা যায়নি, অনুগ্রহ করে ম্যানুয়ালি কপি করুন");
+      return;
+    }
     toast.success(`${label} কপি হয়েছে ✓`);
-  };
-
-  const handleToggleCreds = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowCreds((v) => !v);
-  };
-
-  const handlePassToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setPasswordVisible((v) => !v);
-  };
-
-  const handleCardClick = () => {
-    router.push(`/job/${job.id}`);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1800);
   };
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-2xl  border shadow-sm transition-all duration-300 mb-3 ${styles.card}  hover:shadow-sm `}
       id={`job-card-${job.id}`}
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lift"
     >
-      <div
-        className={`absolute inset-x-0 top-0 h-1 ${
-          urgency === "today"
-            ? "bg-linear-to-r from-red-500 via-red-400 to-red-500"
-            : urgency === "soon"
-              ? "bg-linear-to-r from-orange-400 to-orange-500"
-              : urgency === "week"
-                ? "bg-linear-to-r from-amber-400 to-amber-500"
-                : urgency === "expired"
-                  ? "bg-slate-300"
-                  : "bg-linear-to-r from-indigo-500 to-violet-500"
-        }`}
-      />
+      <div className={`absolute inset-x-0 top-0 h-1 ${styles.bar}`} />
 
       <button
         type="button"
-        className="w-full text-left p-4"
-        onClick={handleCardClick}
-        aria-label={`View details for ${job.title}`}
+        onClick={() => router.push(`/job/${job.id}`)}
+        className="w-full flex-1 p-4.5 text-left sm:p-5"
+        aria-label={`চাকরির বিবরণ দেখুন: ${job.title}`}
       >
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <div className=" min-w-0 w-full">
-            {/* Badges row */}
-            {/* Top info  */}
-
-            <div className="flex items-center justify-between gap-3 mb-2.5 w-full">
-              {/* Left: Badges */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <CategoryBadge category={job.category} />
-                <StatusBadge status={job.status} />
-              </div>
-
-              {/* Right: Deadline + Urgency */}
-              <div className="flex items-center gap-2 shrink-0">
-                <div
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold font-mono ${styles.badge}`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${styles.dot}`}
-                  />
-                  <span>{formattedDeadline}</span>
-                </div>
-                {deadlineSuffix && (
-                  <span
-                    className={`text-[10px] font-sans font-semibold ${
-                      urgency === "today"
-                        ? "text-red-600"
-                        : urgency === "soon"
-                          ? "text-orange-600"
-                          : urgency === "week"
-                            ? "text-amber-600"
-                            : urgency === "expired"
-                              ? "text-gray-400"
-                              : "text-indigo-500"
-                    }`}
-                  >
-                    {deadlineSuffix}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Title */}
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-200 leading-snug font-sans line-clamp-2">
-              {job.title}
-            </h3>
-
-            {/* Organisation */}
-            <div className="flex items-center gap-1.5 mt-1.5 text-sm text-gray-500">
-              <Building2 size={13} className="text-gray-400 shrink-0" />
-              <span className="truncate font-sans">{job.organisation}</span>
-            </div>
-
-            {job.position_number && (
-              <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-                <Hash size={12} className="text-gray-400 shrink-0" />
-                <span className="font-sans">
-                  পদ সংখ্যা:{" "}
-                  <span className="font-semibold text-gray-600">
-                    {job.position_number}
-                  </span>
-                </span>
-              </div>
-            )}
+        <div className="flex flex-wrap items-start justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <CategoryBadge category={job.category} />
+            <StatusBadge status={job.status} />
           </div>
+
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] font-bold ${styles.chip}`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${styles.dot}`} />
+            {deadline.formatted}
+          </span>
         </div>
+
+        <h3 className="mt-3 line-clamp-2 text-[17px] font-bold leading-snug tracking-tight text-slate-900 transition-colors group-hover:text-brand-700">
+          {job.title}
+        </h3>
+
+        <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-slate-500">
+          <Building2 size={13} className="shrink-0 text-slate-400" />
+          <span className="truncate">{job.organisation}</span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {job.position_number && (
+            <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-500 ring-1 ring-inset ring-slate-100">
+              <Hash size={10} className="shrink-0" />
+              <span className="truncate">পদ: {job.position_number}</span>
+            </span>
+          )}
+          {job.salary_range && (
+            <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-500 ring-1 ring-inset ring-slate-100">
+              <Wallet size={10} className="shrink-0" />
+              <span className="truncate">{job.salary_range}</span>
+            </span>
+          )}
+          {deadline.label && (
+            <span className={`text-[10px] font-bold ${styles.text}`}>
+              {deadline.label}
+            </span>
+          )}
+        </div>
+
+        {job.notes && (
+          <p className="mt-3 line-clamp-2 rounded-lg bg-slate-50/80 px-2.5 py-2 text-[11px] leading-5 text-slate-500">
+            {job.notes}
+          </p>
+        )}
       </button>
 
-      {/* Bottom bar: Circular link + Credential toggle */}
-      {(hasCredentials || job.source_url) && (
-        <div
-          className="flex mt-auto items-center justify-between gap-2 px-5 py-2.5 border-t border-gray-100 bg-gray-50/60"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center gap-2">
-            {/* Circular link */}
-            {job.source_url && (
-              <a
-                href={job.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold font-sans bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors"
-              >
-                <ExternalLink size={11} />
-                সার্কুলার দেখুন
-              </a>
-            )}
-          </div>
+      {(hasCredentials || sourceUrl) && (
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-2.5">
+          {sourceUrl ? (
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 text-[10px] font-bold text-brand-700 transition-colors hover:bg-brand-50"
+            >
+              <ExternalLink size={11} />
+              সার্কুলার
+            </a>
+          ) : (
+            <span />
+          )}
 
-          {/* Credential toggle */}
           {hasCredentials && (
             <button
-              onClick={handleToggleCreds}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold font-sans border transition-all ${
+              type="button"
+              onClick={() => setShowCreds((value) => !value)}
+              aria-expanded={showCreds}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all ${
                 showCreds
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
               }`}
             >
               <KeyRound size={11} />
-              {showCreds ? (
-                <>
-                  লগইন তথ্য বন্ধ
-                  <ChevronUp size={11} />
-                </>
-              ) : (
-                <>
-                  লগইন তথ্য দেখুন
-                  <ChevronDown size={11} />
-                </>
-              )}
+              {showCreds ? "তথ্য লুকান" : "লগইন তথ্য"}
+              {showCreds ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
             </button>
           )}
         </div>
       )}
 
-      {/* Credentials panel */}
       {hasCredentials && showCreds && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="px-5 pb-4 pt-3 bg-linear-to-b from-gray-50/80 to-gray-100/40 border-t border-gray-200/60"
-        >
-          <p className="text-[10px] text-gray-400 font-sans font-semibold uppercase tracking-wider mb-2.5">
-            Teletalk / Alljobs পোর্টাল — লগইন তথ্য
+        <div className="border-t border-slate-200/70 bg-slate-50/80 px-4 pb-4 pt-3">
+          <p className="mb-2.5 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            <Lock size={10} />
+            পোর্টাল লগইন তথ্য
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* Username */}
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {job.credentials?.username && (
-              <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-1.5 shadow-xs">
+              <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2.5 shadow-soft">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-400 font-sans font-semibold uppercase tracking-wider">
-                    ইউজারনেম / মোবাইল
+                  <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+                    ইউজারনেম
                   </span>
                   <button
-                    onClick={(e) =>
-                      handleCopy(job.credentials?.username || "", "ইউজারনেম", e)
+                    type="button"
+                    onClick={() =>
+                      handleCopy(
+                        job.credentials?.username || "",
+                        "ইউজারনেম",
+                        "username",
+                      )
                     }
-                    className="p-1 hover:bg-indigo-50 rounded-md text-gray-400 hover:text-indigo-600 transition-colors"
+                    className="rounded-md p-1 text-slate-400 transition-colors hover:bg-brand-50 hover:text-brand-600"
                     title="কপি করুন"
+                    aria-label="ইউজারনেম কপি করুন"
                   >
-                    <Copy size={12} />
+                    {copiedField === "username" ? (
+                      <Check size={12} className="text-emerald-600" />
+                    ) : (
+                      <Copy size={12} />
+                    )}
                   </button>
                 </div>
-                <div className="font-mono font-bold text-gray-800 text-sm tracking-wide select-all bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">
+                <div className="select-all rounded-lg border border-slate-100 bg-slate-50 px-2 py-1 font-mono text-xs font-bold tracking-wide text-slate-800">
                   {job.credentials.username}
                 </div>
               </div>
             )}
 
-            {/* Password */}
             {job.credentials?.password && (
-              <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-1.5 shadow-xs">
+              <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2.5 shadow-soft">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-400 font-sans font-semibold uppercase tracking-wider">
+                  <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
                     পাসওয়ার্ড
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <button
-                      onClick={handlePassToggle}
-                      className="p-1 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                      type="button"
+                      onClick={() => setPasswordVisible((value) => !value)}
+                      className="rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
                       title={passwordVisible ? "লুকান" : "দেখুন"}
+                      aria-label={
+                        passwordVisible ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"
+                      }
                     >
                       {passwordVisible ? (
                         <EyeOff size={12} />
@@ -327,22 +265,30 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
                       )}
                     </button>
                     <button
-                      onClick={(e) =>
+                      type="button"
+                      onClick={() =>
                         handleCopy(
                           job.credentials?.password || "",
                           "পাসওয়ার্ড",
-                          e,
+                          "password",
                         )
                       }
-                      className="p-1 hover:bg-indigo-50 rounded-md text-gray-400 hover:text-indigo-600 transition-colors"
+                      className="rounded-md p-1 text-slate-400 transition-colors hover:bg-brand-50 hover:text-brand-600"
                       title="কপি করুন"
+                      aria-label="পাসওয়ার্ড কপি করুন"
                     >
-                      <Copy size={12} />
+                      {copiedField === "password" ? (
+                        <Check size={12} className="text-emerald-600" />
+                      ) : (
+                        <Copy size={12} />
+                      )}
                     </button>
                   </div>
                 </div>
-                <div className="font-mono font-bold text-gray-800 text-sm tracking-wide select-all bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">
-                  {passwordVisible ? job.credentials.password : "••••••••"}
+                <div className="select-all rounded-lg border border-slate-100 bg-slate-50 px-2 py-1 font-mono text-xs font-bold tracking-wide text-slate-800">
+                  {passwordVisible
+                    ? job.credentials.password
+                    : "••••••••"}
                 </div>
               </div>
             )}

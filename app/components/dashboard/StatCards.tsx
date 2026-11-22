@@ -1,9 +1,14 @@
 "use client";
 
 import React from "react";
-import { parseISO, differenceInCalendarDays, startOfDay } from "date-fns";
+import {
+  parseISO,
+  differenceInCalendarDays,
+  startOfDay,
+} from "date-fns";
 import { Briefcase, Activity, CalendarDays, CheckCircle2 } from "lucide-react";
 import { JobDocument } from "@/lib/hooks/useJobs";
+import { toBnDigits } from "@/lib/utils/bn";
 
 interface StatCardsProps {
   jobs: JobDocument[];
@@ -12,81 +17,114 @@ interface StatCardsProps {
 export const StatCards: React.FC<StatCardsProps> = ({ jobs }) => {
   const today = startOfDay(new Date());
 
-  // 1. Total jobs
   const totalCount = jobs.length;
 
-  // 2. Active jobs (status not in: skipped, failed)
+  const isFinalStatus = (status: JobDocument["status"]) =>
+    status === "passed" || status === "failed" || status === "skipped";
+
   const activeCount = jobs.filter(
-    (job) => job.status !== "skipped" && job.status !== "failed",
+    (job) => !isFinalStatus(job.status),
   ).length;
 
-  // 3. Upcoming jobs: deadline within 7 days, excluding past (since startOfDay)
   const upcomingCount = jobs.filter((job) => {
     if (!job.deadline) return false;
     try {
       const deadlineDate = startOfDay(parseISO(job.deadline));
       const diff = differenceInCalendarDays(deadlineDate, today);
-      // Status excluding final negative results and only future/today's jobs
-      return (
-        diff >= 0 &&
-        diff <= 7 &&
-        job.status !== "skipped" &&
-        job.status !== "failed"
-      );
+      return diff >= 0 && diff <= 7 && !isFinalStatus(job.status);
     } catch {
       return false;
     }
   }).length;
 
-  // 4. Passed jobs (status === "passed")
   const passedCount = jobs.filter((job) => job.status === "passed").length;
 
-  const cardConfig = [
+  const cards = [
     {
       title: "মোট চাকরি",
+      caption: "সর্বমোট আবেদন",
       count: totalCount,
-      icon: <Briefcase className="w-5 h-5" />,
-      themeColor: "text-blue-600 bg-blue-50 border-blue-100",
+      icon: <Briefcase className="h-5 w-5" />,
+      featured: true,
     },
     {
       title: "সক্রিয় আবেদন",
+      caption: "চলমান প্রক্রিয়া",
       count: activeCount,
-      icon: <Activity className="w-5 h-5" />,
-      themeColor: "text-green-600 bg-green-50 border-green-100",
+      icon: <Activity className="h-5 w-5" />,
+      theme: "bg-blue-50 text-blue-600",
     },
     {
       title: "৭ দিনে শেষ হবে",
+      caption: "ডেডলাইন নিকটে",
       count: upcomingCount,
-      icon: <CalendarDays className="w-5 h-5" />,
-      themeColor: "text-amber-600 bg-amber-50 border-amber-100",
+      icon: <CalendarDays className="h-5 w-5" />,
+      theme: "bg-amber-50 text-amber-600",
     },
     {
       title: "পাস করেছেন",
+      caption: "সফল ফলাফল",
       count: passedCount,
-      icon: <CheckCircle2 className="w-5 h-5" />,
-      themeColor: "text-purple-600 bg-purple-50 border-purple-100",
+      icon: <CheckCircle2 className="h-5 w-5" />,
+      theme: "bg-emerald-50 text-emerald-600",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {cardConfig.map((card, index) => (
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {cards.map((card) => (
         <div
-          key={index}
-          className="bg-white border border-gray-100 shadow-xs rounded-xl p-4 flex items-center justify-between text-left transition-all hover:shadow-sm"
+          key={card.title}
+          className={`group relative overflow-hidden rounded-2xl border p-4 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift sm:p-5 ${
+            card.featured
+              ? "border-brand-800/30 bg-[linear-gradient(135deg,#211762_0%,#4c2fe0_58%,#6a53ff_100%)] text-white"
+              : "border-slate-200/70 bg-white"
+          }`}
         >
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold text-gray-500 font-sans mb-1">
-              {card.title}
+          {card.featured && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full border border-white/10"
+            >
+              <div className="absolute inset-4 rounded-full border border-white/10" />
+              <div className="absolute inset-8 rounded-full bg-white/5" />
+            </div>
+          )}
+
+          <div className="relative flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p
+                className={`text-[11px] font-semibold ${
+                  card.featured ? "text-white/65" : "text-slate-500"
+                }`}
+              >
+                {card.title}
+              </p>
+              <p
+                className={`mt-2 font-mono text-3xl font-bold tracking-tight ${
+                  card.featured ? "text-white" : "text-slate-900"
+                }`}
+              >
+                {toBnDigits(card.count)}
+              </p>
+              <p
+                className={`mt-1 truncate text-[10px] ${
+                  card.featured ? "text-white/45" : "text-slate-400"
+                }`}
+              >
+                {card.caption}
+              </p>
+            </div>
+
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                card.featured
+                  ? "border border-white/15 bg-white/10 text-white"
+                  : `border border-white ${card.theme} shadow-soft`
+              }`}
+            >
+              {card.icon}
             </span>
-            <span className="text-2xl sm:text-3xl font-bold text-gray-900 font-mono">
-              {card.count}
-            </span>
-          </div>
-          <div
-            className={`p-2.5 rounded-lg border ${card.themeColor} shrink-0`}
-          >
-            {card.icon}
           </div>
         </div>
       ))}

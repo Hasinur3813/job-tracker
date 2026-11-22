@@ -1,6 +1,7 @@
 export interface CategoryInfo {
   label: string;
   color: string;
+  dot: string;
 }
 
 export type JobCategoryType = "govt" | "non-govt";
@@ -8,10 +9,12 @@ export type JobCategoryType = "govt" | "non-govt";
 export const CATEGORY_CONFIG: Record<JobCategoryType, CategoryInfo> = {
   govt: {
     label: "সরকারি",
-    color: "bg-blue-50 text-blue-700 border border-blue-200",
+    color: "bg-brand-50 text-brand-700 border border-brand-200",
+    dot: "bg-brand-500",
   },
   "non-govt": {
     label: "বেসরকারি",
-    color: "bg-green-50 text-green-700 border border-green-200",
+    color: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    dot: "bg-emerald-500",
   },
 };

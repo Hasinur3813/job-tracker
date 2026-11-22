@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# চাকরি ট্র্যাকার (Chakri Tracker)
 
-## Getting Started
+A calm, Bengali-first job application tracker. Keep every government and
+private-sector application — deadlines, portal credentials, salary and status —
+in one place.
 
-First, run the development server:
+## Features
+
+- **Dashboard** — greeting, live stats, next-deadline highlight, search, sort and filters.
+- **Deadline intelligence** — Bengali dates and color-coded urgency (`আজই শেষ দিন`, `৩ দিন বাকি · জরুরি`, `মেয়াদ শেষ`).
+- **Application detail** — at-a-glance info card, inline status change, portal login vault, notes.
+- **Google sign-in** and **email/password** auth, plus a user-enumeration-safe password reset flow.
+- **Portal credentials vault** — per-field copy and show/hide, only for government applications.
+- **PWA manifest**, responsive layouts, accessible forms, Bengali validation messages.
+
+## Tech stack
+
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS v4 ·
+Firebase Auth + Firestore · react-hook-form + Zod · motion · lucide-react ·
+react-hot-toast.
+
+> This project uses a newer Next.js release with breaking changes. Read the
+> bundled guides in `node_modules/next/dist/docs/` before changing framework code.
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env      # fill in your Firebase web-app values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web app API key |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firestore project id |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Storage bucket |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender id |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Web app id |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Analytics id (optional) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL for metadata (optional) |
 
-## Learn More
+## Firebase setup
 
-To learn more about Next.js, take a look at the following resources:
+1. **Create a project** and add a web app; copy the config into `.env`.
+2. **Authentication → Sign-in method**: enable **Email/Password** and **Google**.
+3. **Authentication → Settings → Authorized domains**: add `localhost` and your
+   production domain (e.g. `your-app.web.app`).
+4. **Password reset email**: review *Authentication → Templates → Password reset*.
+   The generated link returns users to the app; they can then sign in with the new password.
+5. **Firestore rules**: create the database, then paste [`firestore.rules`](./firestore.rules)
+   into *Firestore Database → Rules* and publish. It restricts every user to
+   their own `users/{uid}/**` documents.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The app reads `users/{uid}/jobs` with a single unfiltered collection
+subscription and sorts/filters on the client, so no composite index is needed.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security notes
 
-## Deploy on Vercel
+- Authentication is handled by Firebase; each user can only read and write their
+  own documents under `users/{uid}`.
+- Portal credentials are stored **as entered** in the user's private Firestore
+  document. They are **not** end-to-end encrypted — never share them, and only
+  store credentials you own.
+- Data is scoped per account; deleting the account does not automatically delete
+  its Firestore documents. Remove `users/{uid}` manually if needed.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev      # Turbopack dev server
+npm run build    # production build
+npm run start    # serve the production build
+npm run lint     # ESLint
+```
+
+## Project structure
+
+```
+app/
+  auth/                 login, register, forgot-password
+  dashboard/            stats, search, filters, job grid
+  job/new, job/[id]     create, detail, edit
+  components/
+    auth/ brand/ dashboard/ job/ layout/ ui/
+lib/
+  constants/            category + status configs
+  contexts/             AuthContext (email, Google, reset)
+  firebase/             config + Bengali error mapping
+  hooks/                useAuth, useJobs, useJobMutations
+  utils/                Bengali digits, deadlines, clipboard, navigation
+  validation/           Zod job schema
+```
