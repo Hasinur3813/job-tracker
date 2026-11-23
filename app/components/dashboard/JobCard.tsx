@@ -18,7 +18,7 @@ import {
   Wallet,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { JobDocument } from "@/lib/hooks/useJobs";
+import type { JobDocument } from "@/lib/types/job";
 import {
   DeadlineUrgency,
   getDeadlineInfo,

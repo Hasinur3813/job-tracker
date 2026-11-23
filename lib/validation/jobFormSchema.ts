@@ -1,7 +1,8 @@
 import * as z from "zod";
 import { parseISO, isValid } from "date-fns";
-import { JobDocument } from "@/lib/hooks/useJobs";
+import { JobDocument } from "@/lib/types/job";
 import { JobStatusType } from "@/lib/constants/statusConfig";
+import { buildJobIndexFields } from "@/lib/utils/jobIndex";
 
 const POSITION_NUMBER_REGEX = /^[0-9\u09E6-\u09EF]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -130,7 +131,16 @@ export function toJobPayload(data: JobFormInput): Omit<JobDocument, "id"> {
     };
   }
 
-  return payload;
+  return {
+    ...payload,
+    ...buildJobIndexFields({
+      title: payload.title,
+      organisation: payload.organisation,
+      position_number: payload.position_number,
+      category: payload.category,
+      status: payload.status,
+    }),
+  };
 }
 
 export function jobDocumentToFormInput(

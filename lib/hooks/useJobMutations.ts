@@ -15,8 +15,9 @@ import {
   reportFirestoreError,
 } from "@/lib/firebase/firestoreErrors";
 import type { JobStatusType } from "@/lib/constants/statusConfig";
+import type { JobDocument } from "@/lib/types/job";
+import { buildJobIndexMigrationFields } from "@/lib/utils/jobIndex";
 import { useAuth } from "./useAuth";
-import type { JobDocument } from "./useJobs";
 
 export function useJobMutations() {
   const { currentUser } = useAuth();
@@ -30,6 +31,7 @@ export function useJobMutations() {
         const jobsRef = collection(db, "users", currentUser.uid, "jobs");
         return await addDoc(jobsRef, {
           ...jobData,
+          created_ms: Date.now(),
           created_at: serverTimestamp(),
           updated_at: serverTimestamp(),
         });
@@ -61,14 +63,21 @@ export function useJobMutations() {
   );
 
   const updateStatus = useCallback(
-    async (jobId: string, status: JobStatusType) => {
+    async (job: JobDocument, status: JobStatusType) => {
       if (!currentUser) throw new Error("লগইন করা প্রয়োজন।");
-      const path = `users/${currentUser.uid}/jobs/${jobId}`;
+      const path = `users/${currentUser.uid}/jobs/${job.id}`;
 
       try {
-        const jobRef = doc(db, "users", currentUser.uid, "jobs", jobId);
+        const jobRef = doc(
+          db,
+          "users",
+          currentUser.uid,
+          "jobs",
+          job.id,
+        );
         await updateDoc(jobRef, {
           status,
+          ...buildJobIndexMigrationFields({ ...job, status }),
           updated_at: serverTimestamp(),
         });
       } catch (error) {

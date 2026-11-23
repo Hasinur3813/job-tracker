@@ -13,13 +13,14 @@ import toast from "react-hot-toast";
 import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useJobMutations } from "@/lib/hooks/useJobMutations";
-import type { JobDocument } from "@/lib/hooks/useJobs";
+import type { JobDocument } from "@/lib/types/job";
 import type { JobAttachment } from "@/lib/types/attachment";
 import {
   deleteJobAttachment,
   uploadJobAttachment,
 } from "@/lib/utils/attachments";
 import { toBnDigits } from "@/lib/utils/bn";
+import { getJobCreatedMs } from "@/lib/utils/jobIndex";
 import {
   jobDocumentToFormInput,
   toJobPayload,
@@ -115,6 +116,7 @@ export default function JobEditPage({
       setSavingLabel("পরিবর্তন সংরক্ষণ হচ্ছে…");
       await updateJob(id, {
         ...toJobPayload(data),
+        created_ms: job ? getJobCreatedMs(job) : 0,
         attachments: [...changes.attachments, ...uploaded],
       });
 

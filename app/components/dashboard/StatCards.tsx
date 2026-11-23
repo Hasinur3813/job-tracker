@@ -1,43 +1,19 @@
 "use client";
 
 import React from "react";
-import {
-  parseISO,
-  differenceInCalendarDays,
-  startOfDay,
-} from "date-fns";
 import { Briefcase, Activity, CalendarDays, CheckCircle2 } from "lucide-react";
-import { JobDocument } from "@/lib/hooks/useJobs";
+import type { JobStats } from "@/lib/hooks/useJobStats";
 import { toBnDigits } from "@/lib/utils/bn";
 
 interface StatCardsProps {
-  jobs: JobDocument[];
+  stats: JobStats;
 }
 
-export const StatCards: React.FC<StatCardsProps> = ({ jobs }) => {
-  const today = startOfDay(new Date());
-
-  const totalCount = jobs.length;
-
-  const isFinalStatus = (status: JobDocument["status"]) =>
-    status === "passed" || status === "failed" || status === "skipped";
-
-  const activeCount = jobs.filter(
-    (job) => !isFinalStatus(job.status),
-  ).length;
-
-  const upcomingCount = jobs.filter((job) => {
-    if (!job.deadline) return false;
-    try {
-      const deadlineDate = startOfDay(parseISO(job.deadline));
-      const diff = differenceInCalendarDays(deadlineDate, today);
-      return diff >= 0 && diff <= 7 && !isFinalStatus(job.status);
-    } catch {
-      return false;
-    }
-  }).length;
-
-  const passedCount = jobs.filter((job) => job.status === "passed").length;
+export const StatCards: React.FC<StatCardsProps> = ({ stats }) => {
+  const totalCount = stats.total;
+  const activeCount = stats.active;
+  const upcomingCount = stats.upcoming;
+  const passedCount = stats.passed;
 
   const cards = [
     {

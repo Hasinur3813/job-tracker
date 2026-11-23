@@ -4,17 +4,23 @@ import React from "react";
 import { RotateCcw, SlidersHorizontal } from "lucide-react";
 import {
   STATUS_CONFIG,
-  JobStatusType,
+  type JobStatusType,
 } from "@/lib/constants/statusConfig";
-import { JobDocument } from "@/lib/hooks/useJobs";
+import type { JobCategory } from "@/lib/types/job";
+import type {
+  JobFilterCategory,
+  JobFilterStatus,
+} from "@/lib/utils/jobIndex";
 import { toBnDigits } from "@/lib/utils/bn";
 
 interface FilterBarProps {
-  selectedCategory: "all" | "govt" | "non-govt";
-  setSelectedCategory: (category: "all" | "govt" | "non-govt") => void;
-  selectedStatus: "all" | JobStatusType;
-  setSelectedStatus: (status: "all" | JobStatusType) => void;
-  jobs: JobDocument[];
+  selectedCategory: JobFilterCategory;
+  setSelectedCategory: (category: JobFilterCategory) => void;
+  selectedStatus: JobFilterStatus;
+  setSelectedStatus: (status: JobFilterStatus) => void;
+  total: number;
+  categoryCounts: Record<JobCategory, number>;
+  statusCounts: Record<JobStatusType, number>;
   onReset: () => void;
 }
 
@@ -23,31 +29,28 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setSelectedCategory,
   selectedStatus,
   setSelectedStatus,
-  jobs,
+  total,
+  categoryCounts,
+  statusCounts,
   onReset,
 }) => {
   const categories: {
-    value: "all" | "govt" | "non-govt";
+    value: JobFilterCategory;
     label: string;
     count: number;
   }[] = [
-    { value: "all", label: "সব", count: jobs.length },
+    { value: "all", label: "সব", count: total },
     {
       value: "govt",
       label: "সরকারি",
-      count: jobs.filter((job) => job.category === "govt").length,
+      count: categoryCounts.govt,
     },
     {
       value: "non-govt",
       label: "বেসরকারি",
-      count: jobs.filter((job) => job.category === "non-govt").length,
+      count: categoryCounts["non-govt"],
     },
   ];
-
-  const statusCounts = jobs.reduce<Record<string, number>>((acc, job) => {
-    acc[job.status] = (acc[job.status] ?? 0) + 1;
-    return acc;
-  }, {});
 
   const hasActiveFilter =
     selectedCategory !== "all" || selectedStatus !== "all";
@@ -126,17 +129,22 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   : "bg-slate-100 text-slate-600"
               }`}
             >
-              {toBnDigits(jobs.length)}
+              {toBnDigits(total)}
             </span>
           </button>
 
-          {Object.entries(STATUS_CONFIG).map(([value, info]) => {
+          {(
+            Object.entries(STATUS_CONFIG) as [
+              JobStatusType,
+              (typeof STATUS_CONFIG)[JobStatusType],
+            ][]
+          ).map(([value, info]) => {
             const active = selectedStatus === value;
             return (
               <button
                 key={value}
                 type="button"
-                onClick={() => setSelectedStatus(value as JobStatusType)}
+                onClick={() => setSelectedStatus(value)}
                 aria-pressed={active}
                 className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-all ${
                   active

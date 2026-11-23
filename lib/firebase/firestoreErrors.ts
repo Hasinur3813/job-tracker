@@ -20,3 +20,13 @@ export function getFirestoreErrorMessage(
 ): string {
   return USER_MESSAGES[operation];
 }
+
+export function getFirestoreQueryErrorMessage(error: unknown): string {
+  const code = (error as { code?: string } | null)?.code;
+
+  if (code === "failed-precondition") {
+    return "ডেটাবেস সূচি (index) এখনো প্রস্তুত হয়নি। কয়েক মিনিট পর আবার চেষ্টা করুন।";
+  }
+
+  return getFirestoreErrorMessage("list");
+}

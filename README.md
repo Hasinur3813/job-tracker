@@ -6,7 +6,7 @@ in one place.
 
 ## Features
 
-- **Dashboard** — greeting, live stats, next-deadline highlight, search, sort and filters.
+- **Dashboard** — greeting, live stats, next-deadline highlight, word-prefix search, sort, filters, and server-side pagination.
 - **Deadline intelligence** — Bengali dates and color-coded urgency (`আজই শেষ দিন`, `৩ দিন বাকি · জরুরি`, `মেয়াদ শেষ`).
 - **Application detail** — at-a-glance info card, inline status change, portal login vault, notes.
 - **File attachments** — attach PDFs or images while adding/editing a job, then view and download them later. Uploads use signed Cloudinary requests and per-user folders.
@@ -62,12 +62,32 @@ Open <http://localhost:3000>.
    into *Firestore Database → Rules* and publish, or run
    `firebase deploy --only firestore:rules`. It restricts every user to their
    own `users/{uid}/**` documents.
+6. **Firestore indexes**: deploy [`firestore.indexes.json`](./firestore.indexes.json)
+   with `firebase deploy --only firestore:indexes` (or let the Firebase console
+   create each suggested index from the browser error link). The dashboard needs
+   these composite indexes for paged search, filtering, and sorting.
 
 Signing in with Google (or email/password) creates or updates a
 `users/{uid}/profile/main` profile containing the display name, email, photo
-URL, providers, and last login time. The app reads `users/{uid}/jobs` with a
-single unfiltered collection subscription and sorts/filters on the client, so no
-composite index is needed.
+URL, providers, and last login time.
+
+### Search, filters, and pagination
+
+Dashboard reads are paged in Firestore: each page asks for nine documents with
+`limit`/`startAfter`, and the total comes from count aggregation. Category,
+status, and word-prefix search are resolved by Firestore, not by loading the
+whole collection.
+
+To make that possible, each job document carries derived index fields:
+`filter_key`, `search_terms`, `title_norm`, `created_ms`, and
+`search_index_version`. They are written automatically whenever a job is added,
+edited, or has its status changed. Existing jobs created before this system need
+a one-time backfill: the dashboard shows an “সূচি তৈরি করুন” card and runs the
+backfill only after the signed-in user confirms it.
+
+Search matches word prefixes (for example, `বাংলা` matches `বাংলাদেশ`), and
+`Enter` submits the query. Deadline sort shows upcoming applications first,
+nearest deadline first, followed by expired applications most-recent first.
 
 ## Cloudinary setup (job attachments)
 
@@ -118,7 +138,7 @@ npm run lint     # ESLint
 app/
   api/attachments/      signed Cloudinary upload, link + delete
   auth/                 login, register, forgot-password
-  dashboard/            stats, search, filters, job grid
+  dashboard/            stats, search, filters, paged job grid/list
   job/new, job/[id]     create, detail, edit
   components/
     auth/ brand/ dashboard/ job/ layout/ ui/
@@ -127,8 +147,10 @@ lib/
   constants/            category + status configs
   contexts/             AuthContext (email, Google, reset)
   firebase/             config + Bengali error mapping
-  hooks/                useAuth, useJobs, useJobMutations
-  types/                JobAttachment type
-  utils/                attachments, Bengali digits, deadlines, clipboard, navigation
+  hooks/                useAuth, useJobMutations, usePaginatedJobs,
+                        useJobStats, useJobIndexMigration
+  types/                JobDocument and JobAttachment types
+  utils/                attachments, Bengali digits, deadlines, clipboard,
+                        navigation, job search/filter index fields
   validation/           Zod job schema
 ```

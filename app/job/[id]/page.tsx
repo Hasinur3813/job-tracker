@@ -24,7 +24,7 @@ import toast from "react-hot-toast";
 import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useJobMutations } from "@/lib/hooks/useJobMutations";
-import type { JobDocument } from "@/lib/hooks/useJobs";
+import type { JobDocument } from "@/lib/types/job";
 import type { JobStatusType } from "@/lib/constants/statusConfig";
 import { deleteJobAttachment } from "@/lib/utils/attachments";
 import {
@@ -413,9 +413,10 @@ export default function JobDetailPage({
   }, [currentUser, id, reloadKey]);
 
   const handleStatusChange = async (newStatus: JobStatusType) => {
+    if (!job) return;
     setUpdatingStatus(true);
     try {
-      await updateStatus(id, newStatus);
+      await updateStatus(job, newStatus);
       toast.success("স্ট্যাটাস আপডেট হয়েছে ✓");
     } catch (error) {
       toast.error(

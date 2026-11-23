@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -18,18 +18,28 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { useJobs } from "@/lib/hooks/useJobs";
-import { JobStatusType } from "@/lib/constants/statusConfig";
-import { getDeadlineInfo, timestampToMillis } from "@/lib/utils/deadline";
+import { useJobIndexMigration } from "@/lib/hooks/useJobIndexMigration";
+import { useJobStats } from "@/lib/hooks/useJobStats";
+import {
+  JOBS_PAGE_SIZE,
+  usePaginatedJobs,
+} from "@/lib/hooks/usePaginatedJobs";
+import {
+  type JobFilterCategory,
+  type JobFilterStatus,
+  type JobSortOption,
+} from "@/lib/utils/jobIndex";
+import { getDeadlineInfo } from "@/lib/utils/deadline";
 import { getGreeting, toBnDigits } from "@/lib/utils/bn";
 import { StatCards } from "@/app/components/dashboard/StatCards";
 import { FilterBar } from "@/app/components/dashboard/FilterBar";
 import { JobCard } from "@/app/components/dashboard/JobCard";
+import { PaginationBar } from "@/app/components/dashboard/PaginationBar";
+import { IndexSetupCard } from "@/app/components/dashboard/IndexSetupCard";
 import { Header } from "@/app/components/layout/Header";
 import { ProtectedRoute } from "@/app/components/layout/ProtectedRoute";
 import { Button } from "@/app/components/ui/Button";
 
-type SortOption = "deadline" | "recent" | "title";
 type ViewMode = "grid" | "list";
 
 const VIEW_STORAGE_KEY = "chakri-tracker:job-view";
@@ -41,23 +51,83 @@ const deadlineBadgeTone: Record<string, string> = {
   normal: "bg-emerald-400/15 text-emerald-200",
 };
 
+function getInitialPage(): number {
+  if (typeof window === "undefined") return 1;
+
+  const value = Number(
+    new URLSearchParams(window.location.search).get("page"),
+  );
+
+  return Number.isInteger(value) && value > 1 ? value : 1;
+}
+
 export default function DashboardPage() {
   const { currentUser } = useAuth();
-  const { jobs, loading, error } = useJobs();
+  const indexMigration = useJobIndexMigration();
+  const indexReady = indexMigration.status === "ready";
+
+  const {
+    stats,
+    loading: statsLoading,
+    error: statsError,
+    refresh: refreshStats,
+  } = useJobStats(indexReady);
+
+  const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<
-    "all" | "govt" | "non-govt"
-  >("all");
-  const [selectedStatus, setSelectedStatus] = useState<"all" | JobStatusType>(
-    "all",
-  );
-  const [sortBy, setSortBy] = useState<SortOption>("deadline");
+  const [selectedCategory, setSelectedCategory] =
+    useState<JobFilterCategory>("all");
+  const [selectedStatus, setSelectedStatus] =
+    useState<JobFilterStatus>("all");
+  const [sortBy, setSortBy] = useState<JobSortOption>("deadline");
+  const [page, setPage] = useState(getInitialPage);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "grid";
     return window.localStorage.getItem(VIEW_STORAGE_KEY) === "list"
       ? "list"
       : "grid";
   });
+
+  const {
+    jobs,
+    total: filteredTotal,
+    page: currentPage,
+    pageCount,
+    loading: jobsLoading,
+    error: jobsError,
+    refresh: refreshJobs,
+  } = usePaginatedJobs(
+    {
+      search: searchQuery,
+      category: selectedCategory,
+      status: selectedStatus,
+      sort: sortBy,
+      page,
+    },
+    indexReady,
+  );
+
+  const urlPage =
+    pageCount > 0 ? Math.min(page, pageCount) : 1;
+
+  useEffect(() => {
+    if (jobsLoading) return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (urlPage > 1) {
+      params.set("page", String(urlPage));
+    } else {
+      params.delete("page");
+    }
+
+    const queryString = params.toString();
+    const nextUrl = `${window.location.pathname}${
+      queryString ? `?${queryString}` : ""
+    }${window.location.hash}`;
+
+    window.history.replaceState(null, "", nextUrl);
+  }, [urlPage, jobsLoading]);
 
   const changeViewMode = (mode: ViewMode) => {
     setViewMode(mode);
@@ -72,80 +142,85 @@ export default function DashboardPage() {
     currentUser?.displayName?.trim() ||
     currentUser?.email?.split("@")[0] ||
     "বন্ধু";
-  const friendlyName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+  const friendlyName =
+    displayName.charAt(0).toUpperCase() + displayName.slice(1);
 
-  const nextDeadline = useMemo(() => {
-    const finalStatuses: JobStatusType[] = ["passed", "failed", "skipped"];
-    const candidates = jobs
-      .filter(
-        (job) =>
-          job.deadline && !finalStatuses.includes(job.status),
-      )
-      .map((job) => ({ job, info: getDeadlineInfo(job.deadline) }))
-      .filter(({ info }) => info.isValid && (info.daysLeft ?? -1) >= 0)
-      .sort((a, b) => (a.info.daysLeft ?? 0) - (b.info.daysLeft ?? 0));
-
-    return candidates[0] ?? null;
-  }, [jobs]);
-
-  const filteredJobs = useMemo(() => {
-    const searchLower = searchQuery.toLowerCase().trim();
-
-    const filtered = jobs.filter((job) => {
-      const categoryMatch =
-        selectedCategory === "all" || job.category === selectedCategory;
-      const statusMatch =
-        selectedStatus === "all" || job.status === selectedStatus;
-      const titleMatch = job.title?.toLowerCase().includes(searchLower);
-      const orgMatch = job.organisation?.toLowerCase().includes(searchLower);
-      const positionMatch = job.position_number
-        ?.toLowerCase()
-        .includes(searchLower);
-      const searchMatch =
-        !searchLower || titleMatch || orgMatch || positionMatch;
-      return categoryMatch && statusMatch && searchMatch;
-    });
-
-    return [...filtered].sort((a, b) => {
-      if (sortBy === "title") {
-        return a.title.localeCompare(b.title, "bn");
-      }
-      if (sortBy === "recent") {
-        return (
-          (timestampToMillis(b.created_at) ?? 0) -
-          (timestampToMillis(a.created_at) ?? 0)
-        );
-      }
-      const aInfo = getDeadlineInfo(a.deadline);
-      const bInfo = getDeadlineInfo(b.deadline);
-      if (!aInfo.isValid || !bInfo.isValid) {
-        return Number(bInfo.isValid) - Number(aInfo.isValid);
-      }
-      const aDays = aInfo.daysLeft ?? 0;
-      const bDays = bInfo.daysLeft ?? 0;
-      const aExpired = aDays < 0;
-      const bExpired = bDays < 0;
-      if (aExpired !== bExpired) return aExpired ? 1 : -1;
-      return aExpired ? bDays - aDays : aDays - bDays;
-    });
-  }, [jobs, searchQuery, selectedCategory, selectedStatus, sortBy]);
+  const nextDeadlineJob = stats?.nextDeadlineJob ?? null;
+  const nextDeadlineInfo = nextDeadlineJob
+    ? getDeadlineInfo(nextDeadlineJob.deadline)
+    : null;
 
   const hasActiveFilters =
-    searchQuery.trim() !== "" ||
+    searchQuery !== "" ||
     selectedCategory !== "all" ||
     selectedStatus !== "all";
 
+  const searchPending = searchDraft.trim() !== searchQuery;
+
+  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextQuery = searchDraft.trim();
+    if (nextQuery === searchQuery) return;
+
+    setSearchQuery(nextQuery);
+    setPage(1);
+  };
+
+  const clearSearch = () => {
+    setSearchDraft("");
+    if (!searchQuery) return;
+
+    setSearchQuery("");
+    setPage(1);
+  };
+
+  const changeCategory = (category: JobFilterCategory) => {
+    if (category === selectedCategory) return;
+
+    setSelectedCategory(category);
+    setPage(1);
+  };
+
+  const changeStatus = (status: JobFilterStatus) => {
+    if (status === selectedStatus) return;
+
+    setSelectedStatus(status);
+    setPage(1);
+  };
+
+  const changeSort = (sort: JobSortOption) => {
+    if (sort === sortBy) return;
+
+    setSortBy(sort);
+    setPage(1);
+  };
+
   const resetFilters = () => {
+    setSearchDraft("");
     setSearchQuery("");
     setSelectedCategory("all");
     setSelectedStatus("all");
+    setPage(1);
   };
 
-  const scrollToJobs = () => {
+  const handlePageChange = (nextPage: number) => {
+    if (nextPage === page) return;
+    setPage(nextPage);
     document
       .getElementById("jobs-list")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const retryQueries = () => {
+    refreshStats();
+    refreshJobs();
+  };
+
+  const resultSummary = hasActiveFilters
+    ? `${toBnDigits(filteredTotal)} / ${
+        stats ? toBnDigits(stats.total) : "…"
+      } টি মিলেছে`
+    : `মোট ${toBnDigits(filteredTotal)} টি আবেদন`;
 
   return (
     <ProtectedRoute>
@@ -190,7 +265,14 @@ export default function DashboardPage() {
                   </Link>
                   <button
                     type="button"
-                    onClick={scrollToJobs}
+                    onClick={() =>
+                      document
+                        .getElementById("jobs-list")
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        })
+                    }
                     className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-semibold text-white/80 transition-all hover:bg-white/10 hover:text-white"
                   >
                     আবেদনগুলো দেখুন
@@ -207,29 +289,43 @@ export default function DashboardPage() {
                   <CalendarDays size={14} className="text-white/60" />
                 </div>
 
-                {nextDeadline ? (
+                {statsError && !stats ? (
+                  <p className="mt-4 text-[13px] leading-6 text-white/60">
+                    ডেডলাইনের তথ্য এখন পাওয়া যাচ্ছে না।
+                  </p>
+                ) : statsLoading || !stats ? (
+                  <div
+                    className="mt-4 animate-pulse space-y-2.5"
+                    aria-hidden="true"
+                  >
+                    <div className="h-3.5 w-3/4 rounded bg-white/15" />
+                    <div className="h-2.5 w-1/2 rounded bg-white/10" />
+                    <div className="h-8 w-full rounded-lg bg-white/10" />
+                  </div>
+                ) : nextDeadlineJob && nextDeadlineInfo ? (
                   <div className="mt-3">
                     <p className="line-clamp-2 text-sm font-bold leading-snug text-white">
-                      {nextDeadline.job.title}
+                      {nextDeadlineJob.title}
                     </p>
                     <p className="mt-1 truncate text-[13px] text-white/70">
-                      {nextDeadline.job.organisation}
+                      {nextDeadlineJob.organisation}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[13px] font-medium text-white/80">
-                        {nextDeadline.info.formatted}
+                        {nextDeadlineInfo.formatted}
                       </span>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${
-                          deadlineBadgeTone[nextDeadline.info.urgency] ??
-                          "bg-white/10 text-white/70"
+                          deadlineBadgeTone[
+                            nextDeadlineInfo.urgency
+                          ] ?? "bg-white/10 text-white/70"
                         }`}
                       >
-                        {nextDeadline.info.label}
+                        {nextDeadlineInfo.label}
                       </span>
                     </div>
                     <Link
-                      href={`/job/${nextDeadline.job.id}`}
+                      href={`/job/${nextDeadlineJob.id}`}
                       className="mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[12.5px] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                     >
                       বিস্তারিত দেখুন
@@ -251,301 +347,360 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {error && (
-            <div
-              role="alert"
-              className="mt-4 flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <span className="flex items-start gap-2">
-                <CircleAlert size={16} className="mt-0.5 shrink-0" />
-                {error}
-              </span>
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="self-start rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-soft sm:self-auto"
-              >
-                আবার চেষ্টা করুন
-              </button>
+          {!indexReady ? (
+            <div className="mt-5">
+              <IndexSetupCard
+                status={indexMigration.status}
+                pendingCount={indexMigration.pendingCount}
+                error={indexMigration.error}
+                onConfirm={() => {
+                  void indexMigration.confirm();
+                }}
+                onRetry={indexMigration.retry}
+              />
             </div>
-          )}
-
-          <div className="mt-4">
-            {loading ? (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                {[1, 2, 3, 4].map((item) => (
-                  <div
-                    key={item}
-                    className="h-[104px] animate-pulse rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card"
-                  >
-                    <div className="h-2 w-16 rounded bg-slate-100" />
-                    <div className="mt-3 h-7 w-12 rounded bg-slate-100" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <StatCards jobs={jobs} />
-            )}
-          </div>
-
-          <section className="mt-5 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              <div className="relative flex-1">
-                <Search
-                  size={17}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="পদ, প্রতিষ্ঠান বা পদ সংখ্যা দিয়ে খুঁজুন..."
-                  aria-label="আবেদন খুঁজুন"
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-10 pr-10 text-[15px] text-slate-900 placeholder:text-slate-500 transition-all hover:border-slate-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100"
-                />
-                {searchQuery && (
+          ) : (
+            <>
+              {(statsError || jobsError) && (
+                <div
+                  role="alert"
+                  className="mt-4 flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span className="flex items-start gap-2">
+                    <CircleAlert
+                      size={16}
+                      className="mt-0.5 shrink-0"
+                    />
+                    {statsError ?? jobsError}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setSearchQuery("")}
-                    aria-label="সার্চ মুছুন"
-                    className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    onClick={retryQueries}
+                    className="self-start rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-soft sm:self-auto"
                   >
-                    <X size={14} />
+                    আবার চেষ্টা করুন
                   </button>
+                </div>
+              )}
+
+              <div className="mt-4">
+                {stats ? (
+                  <StatCards stats={stats} />
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                    {[1, 2, 3, 4].map((item) => (
+                      <div
+                        key={item}
+                        className="h-[104px] animate-pulse rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card"
+                      >
+                        <div className="h-2 w-16 rounded bg-slate-100" />
+                        <div className="mt-3 h-7 w-12 rounded bg-slate-100" />
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="sort-jobs"
-                  className="shrink-0 text-[12.5px] font-semibold text-slate-500"
-                >
-                  সাজান:
-                </label>
-                <div className="relative flex-1 lg:flex-none">
-                  <select
-                    id="sort-jobs"
-                    value={sortBy}
-                    onChange={(event) =>
-                      setSortBy(event.target.value as SortOption)
-                    }
-                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-semibold text-slate-600 transition-colors hover:border-slate-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100 lg:w-48"
+              <section className="mt-5 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                  <form
+                    onSubmit={submitSearch}
+                    className="relative flex-1"
                   >
-                    <option value="deadline">ডেডলাইন অনুযায়ী</option>
-                    <option value="recent">সাম্প্রতিক যোগ করা</option>
-                    <option value="title">নাম অনুযায়ী</option>
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
+                    <Search
+                      size={17}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                    <input
+                      type="text"
+                      value={searchDraft}
+                      onChange={(event) =>
+                        setSearchDraft(event.target.value)
+                      }
+                      placeholder="পদ, প্রতিষ্ঠান বা পদ সংখ্যা দিয়ে খুঁজুন..."
+                      aria-label="আবেদন খুঁজুন"
+                      enterKeyHint="search"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-10 pr-10 text-[15px] text-slate-900 placeholder:text-slate-500 transition-all hover:border-slate-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100"
+                    />
+                    {searchDraft && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        aria-label="সার্চ মুছুন"
+                        className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </form>
+
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="sort-jobs"
+                      className="shrink-0 text-[12.5px] font-semibold text-slate-500"
+                    >
+                      সাজান:
+                    </label>
+                    <div className="relative flex-1 lg:flex-none">
+                      <select
+                        id="sort-jobs"
+                        value={sortBy}
+                        onChange={(event) =>
+                          changeSort(
+                            event.target.value as JobSortOption,
+                          )
+                        }
+                        className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-semibold text-slate-600 transition-colors hover:border-slate-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100 lg:w-48"
+                      >
+                        <option value="deadline">
+                          ডেডলাইন অনুযায়ী
+                        </option>
+                        <option value="recent">সাম্প্রতিক যোগ করা</option>
+                        <option value="title">নাম অনুযায়ী</option>
+                      </select>
+                      <ChevronDown
+                        size={14}
+                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                <p className="mt-2 text-[11.5px] text-slate-500">
+                  শব্দের শুরু দিয়ে সার্চ হয় · Enter চাপুন
+                  {searchPending ? " · পরিবর্তন এখনো প্রযোজ্য হয়নি" : ""}
+                </p>
+              </section>
+
+              <div className="mt-4">
+                {stats ? (
+                  <FilterBar
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={changeCategory}
+                    selectedStatus={selectedStatus}
+                    setSelectedStatus={changeStatus}
+                    total={stats.total}
+                    categoryCounts={stats.categoryCounts}
+                    statusCounts={stats.statusCounts}
+                    onReset={resetFilters}
+                  />
+                ) : (
+                  <div className="h-[164px] animate-pulse rounded-2xl border border-slate-200/70 bg-white shadow-card" />
+                )}
               </div>
-            </div>
-          </section>
-
-          <div className="mt-4">
-            <FilterBar
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedStatus={selectedStatus}
-              setSelectedStatus={setSelectedStatus}
-              jobs={jobs}
-              onReset={resetFilters}
-            />
-          </div>
-
-          <div
-            id="jobs-list"
-            className="mt-6 flex scroll-mt-24 flex-wrap items-end justify-between gap-3"
-          >
-            <div>
-              <h2 className="text-base font-bold tracking-tight text-slate-900">
-                আপনার আবেদনসমূহ
-              </h2>
-              <p
-                className="mt-0.5 text-[12.5px] text-slate-500"
-                aria-live="polite"
-              >
-                {toBnDigits(filteredJobs.length)} / {toBnDigits(jobs.length)}{" "}
-                টি আবেদন দেখানো হচ্ছে
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-500 transition-colors hover:text-rose-600"
-                >
-                  <X size={12} />
-                  সব ফিল্টার মুছুন
-                </button>
-              )}
 
               <div
-                role="group"
-                aria-label="আবেদন দেখার ধরন"
-                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-soft"
+                id="jobs-list"
+                className="mt-6 flex scroll-mt-24 flex-wrap items-end justify-between gap-3"
               >
-                <button
-                  type="button"
-                  onClick={() => changeViewMode("grid")}
-                  aria-pressed={viewMode === "grid"}
-                  aria-label="কার্ড ভিউ"
-                  title="কার্ড ভিউ"
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
-                    viewMode === "grid"
-                      ? "bg-brand-600 text-white shadow-soft"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <LayoutGrid size={15} />
-                  <span className="hidden sm:inline">কার্ড</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => changeViewMode("list")}
-                  aria-pressed={viewMode === "list"}
-                  aria-label="লিস্ট ভিউ"
-                  title="লিস্ট ভিউ"
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
-                    viewMode === "list"
-                      ? "bg-brand-600 text-white shadow-soft"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <ListIcon size={15} />
-                  <span className="hidden sm:inline">লিস্ট</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            {loading ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {[1, 2, 3].map((item) => (
-                  <div
-                    key={item}
-                    className="h-48 animate-pulse rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card"
+                <div>
+                  <h2 className="text-base font-bold tracking-tight text-slate-900">
+                    আপনার আবেদনসমূহ
+                  </h2>
+                  <p
+                    className="mt-0.5 text-[12.5px] text-slate-500"
+                    aria-live="polite"
                   >
-                    <div className="flex gap-2">
-                      <div className="h-5 w-16 rounded-full bg-slate-100" />
-                      <div className="h-5 w-20 rounded-full bg-slate-100" />
-                    </div>
-                    <div className="mt-4 h-4 w-3/4 rounded bg-slate-100" />
-                    <div className="mt-2 h-3 w-1/2 rounded bg-slate-100" />
-                  </div>
-                ))}
-              </div>
-            ) : error && jobs.length === 0 ? null : jobs.length === 0 ? (
-              <div className="overflow-hidden rounded-3xl border border-brand-100 bg-white shadow-card">
-                <div className="relative p-6 sm:p-9">
+                    {jobsLoading
+                      ? "আবেদন লোড হচ্ছে…"
+                      : resultSummary}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-500 transition-colors hover:text-rose-600"
+                    >
+                      <X size={12} />
+                      সব ফিল্টার মুছুন
+                    </button>
+                  )}
+
                   <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-50 blur-3xl"
-                  />
-                  <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-glow">
-                      <ClipboardList size={28} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-                        চলুন আপনার চাকরি ট্র্যাকিং শুরু করি
-                      </h3>
-                      <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
-                        আপনি এখনো কোনো আবেদন যোগ করেননি। প্রথম আবেদনটি যোগ
-                        করলেই ডেডলাইন, স্ট্যাটাস আর লগইন তথ্য—সব এক জায়গায়
-                        গুছিয়ে যাবে।
-                      </p>
-
-                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                        {[
-                          {
-                            step: "১",
-                            title: "আবেদন যোগ করুন",
-                            text: "পদ, প্রতিষ্ঠান ও ডেডলাইন লিখুন।",
-                          },
-                          {
-                            step: "২",
-                            title: "স্ট্যাটাস আপডেট করুন",
-                            text: "পরীক্ষা, ভাইভা, ফলাফল—সব ট্র্যাক করুন।",
-                          },
-                          {
-                            step: "৩",
-                            title: "সময়মতো প্রস্তুত হন",
-                            text: "ডেডলাইনের আগেই সতর্ক হন।",
-                          },
-                        ].map((item) => (
-                          <div
-                            key={item.step}
-                            className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
-                          >
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 font-mono text-[12px] font-bold text-white">
-                              {item.step}
-                            </span>
-                            <p className="mt-2.5 text-xs font-bold text-slate-800">
-                              {item.title}
-                            </p>
-                            <p className="mt-1 text-[12.5px] leading-5 text-slate-500">
-                              {item.text}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="mt-6 flex flex-wrap gap-2.5">
-                        <Link
-                          href="/job/new"
-                          className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-xs font-bold text-white shadow-glow transition-colors hover:bg-brand-700"
-                        >
-                          <Plus size={15} />
-                          প্রথম আবেদন যোগ করুন
-                        </Link>
-                        <Link
-                          href="/#features-section"
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                        >
-                          ফিচারসমূহ দেখুন
-                        </Link>
-                      </div>
-                    </div>
+                    role="group"
+                    aria-label="আবেদন দেখার ধরন"
+                    className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-soft"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => changeViewMode("grid")}
+                      aria-pressed={viewMode === "grid"}
+                      aria-label="কার্ড ভিউ"
+                      title="কার্ড ভিউ"
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                        viewMode === "grid"
+                          ? "bg-brand-600 text-white shadow-soft"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <LayoutGrid size={15} />
+                      <span className="hidden sm:inline">কার্ড</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeViewMode("list")}
+                      aria-pressed={viewMode === "list"}
+                      aria-label="লিস্ট ভিউ"
+                      title="লিস্ট ভিউ"
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                        viewMode === "list"
+                          ? "bg-brand-600 text-white shadow-soft"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <ListIcon size={15} />
+                      <span className="hidden sm:inline">লিস্ট</span>
+                    </button>
                   </div>
                 </div>
               </div>
-            ) : filteredJobs.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-12 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
-                  <SearchX size={24} />
-                </div>
-                <h3 className="mt-4 text-base font-bold text-slate-900">
-                  কোনো আবেদন মেলেনি
-                </h3>
-                <p className="mx-auto mt-1.5 max-w-md text-xs leading-6 text-slate-500">
-                  আপনার সার্চ বা ফিল্টারের সঙ্গে মিলে এমন কোনো আবেদন পাওয়া
-                  যায়নি। ফিল্টার মুছে আবার দেখুন।
-                </p>
-                <div className="mt-5 flex justify-center">
-                  <Button variant="secondary" onClick={resetFilters}>
-                    সব ফিল্টার মুছুন
-                  </Button>
-                </div>
+
+              <div className="mt-4">
+                {jobsLoading ? (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {[1, 2, 3].map((item) => (
+                      <div
+                        key={item}
+                        className="h-48 animate-pulse rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card"
+                      >
+                        <div className="flex gap-2">
+                          <div className="h-5 w-16 rounded-full bg-slate-100" />
+                          <div className="h-5 w-20 rounded-full bg-slate-100" />
+                        </div>
+                        <div className="mt-4 h-4 w-3/4 rounded bg-slate-100" />
+                        <div className="mt-2 h-3 w-1/2 rounded bg-slate-100" />
+                      </div>
+                    ))}
+                  </div>
+                ) : jobsError ? null : filteredTotal === 0 ? (
+                  stats?.total === 0 ? (
+                    <div className="overflow-hidden rounded-3xl border border-brand-100 bg-white shadow-card">
+                      <div className="relative p-6 sm:p-9">
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-50 blur-3xl"
+                        />
+                        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start">
+                          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-glow">
+                            <ClipboardList size={28} />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+                              চলুন আপনার চাকরি ট্র্যাকিং শুরু করি
+                            </h3>
+                            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
+                              আপনি এখনো কোনো আবেদন যোগ করেননি। প্রথম
+                              আবেদনটি যোগ করলেই ডেডলাইন, স্ট্যাটাস আর
+                              লগইন তথ্য—সব এক জায়গায় গুছিয়ে যাবে।
+                            </p>
+
+                            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                              {[
+                                {
+                                  step: "১",
+                                  title: "আবেদন যোগ করুন",
+                                  text: "পদ, প্রতিষ্ঠান ও ডেডলাইন লিখুন।",
+                                },
+                                {
+                                  step: "২",
+                                  title: "স্ট্যাটাস আপডেট করুন",
+                                  text: "পরীক্ষা, ভাইভা, ফলাফল—সব ট্র্যাক করুন।",
+                                },
+                                {
+                                  step: "৩",
+                                  title: "সময়মতো প্রস্তুত হন",
+                                  text: "ডেডলাইনের আগেই সতর্ক হন।",
+                                },
+                              ].map((item) => (
+                                <div
+                                  key={item.step}
+                                  className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+                                >
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 font-mono text-[12px] font-bold text-white">
+                                    {item.step}
+                                  </span>
+                                  <p className="mt-2.5 text-xs font-bold text-slate-800">
+                                    {item.title}
+                                  </p>
+                                  <p className="mt-1 text-[12.5px] leading-5 text-slate-500">
+                                    {item.text}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="mt-6 flex flex-wrap gap-2.5">
+                              <Link
+                                href="/job/new"
+                                className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-xs font-bold text-white shadow-glow transition-colors hover:bg-brand-700"
+                              >
+                                <Plus size={15} />
+                                প্রথম আবেদন যোগ করুন
+                              </Link>
+                              <Link
+                                href="/#features-section"
+                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                              >
+                                ফিচারসমূহ দেখুন
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-12 text-center">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                        <SearchX size={24} />
+                      </div>
+                      <h3 className="mt-4 text-base font-bold text-slate-900">
+                        কোনো আবেদন মেলেনি
+                      </h3>
+                      <p className="mx-auto mt-1.5 max-w-md text-xs leading-6 text-slate-500">
+                        আপনার সার্চ বা ফিল্টারের সঙ্গে মিলে এমন কোনো
+                        আবেদন পাওয়া যায়নি। ফিল্টার মুছে আবার দেখুন।
+                      </p>
+                      <div className="mt-5 flex justify-center">
+                        <Button
+                          variant="secondary"
+                          onClick={resetFilters}
+                        >
+                          সব ফিল্টার মুছুন
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                ) : viewMode === "list" ? (
+                  <div className="flex flex-col gap-3">
+                    {jobs.map((job) => (
+                      <JobCard
+                        key={job.id}
+                        job={job}
+                        variant="list"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {jobs.map((job) => (
+                      <JobCard key={job.id} job={job} />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : viewMode === "list" ? (
-              <div className="flex flex-col gap-3">
-                {filteredJobs.map((job) => (
-                  <JobCard key={job.id} job={job} variant="list" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredJobs.map((job) => (
-                  <JobCard key={job.id} job={job} />
-                ))}
-              </div>
-            )}
-          </div>
+
+              <PaginationBar
+                page={currentPage}
+                pageCount={pageCount}
+                total={filteredTotal}
+                pageSize={JOBS_PAGE_SIZE}
+                loading={jobsLoading}
+                onPageChange={handlePageChange}
+              />
+            </>
+          )}
 
           <p className="mt-10 text-center text-[12.5px] text-slate-500">
             চাকরি ট্র্যাকার · আপনার সব তথ্য আপনার অ্যাকাউন্টে সুরক্ষিত
