@@ -26,6 +26,7 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { useJobMutations } from "@/lib/hooks/useJobMutations";
 import type { JobDocument } from "@/lib/hooks/useJobs";
 import type { JobStatusType } from "@/lib/constants/statusConfig";
+import { deleteJobAttachment } from "@/lib/utils/attachments";
 import {
   DeadlineUrgency,
   formatTimestamp,
@@ -38,6 +39,8 @@ import { CategoryBadge } from "@/app/components/job/CategoryBadge";
 import { StatusBadge } from "@/app/components/job/StatusBadge";
 import { StatusDropdown } from "@/app/components/job/StatusDropdown";
 import { CredentialsBlock } from "@/app/components/job/CredentialsBlock";
+import { AttachmentList } from "@/app/components/job/AttachmentList";
+import { JobAttachmentAdder } from "@/app/components/job/JobAttachmentAdder";
 import { Button } from "@/app/components/ui/Button";
 import { ConfirmDialog } from "@/app/components/ui/ConfirmDialog";
 
@@ -61,11 +64,11 @@ function InfoItem({
 }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-400">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-500">
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold text-slate-400">{label}</p>
+        <p className="text-[12px] font-semibold text-slate-500">{label}</p>
         <div className="mt-1 text-sm font-semibold text-slate-800">
           {children}
         </div>
@@ -143,7 +146,7 @@ function JobDetailView({
           <ArrowLeft size={17} />
         </button>
         <nav
-          className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-slate-400"
+          className="flex min-w-0 items-center gap-1.5 text-[12.5px] font-medium text-slate-500"
           aria-label="ব্রেডক্রাম্ব"
         >
           <Link
@@ -156,7 +159,7 @@ function JobDetailView({
           <span className="truncate text-slate-600">{job.title}</span>
         </nav>
         {updatedAt && (
-          <span className="ml-auto hidden shrink-0 text-[10px] text-slate-400 sm:block">
+          <span className="ml-auto hidden shrink-0 text-[12px] text-slate-500 sm:block">
             আপডেট: {updatedAt}
           </span>
         )}
@@ -178,14 +181,14 @@ function JobDetailView({
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
               <span className="inline-flex items-center gap-1.5">
-                <Building2 size={14} className="text-slate-400" />
+                <Building2 size={14} className="text-slate-500" />
                 {job.organisation}
               </span>
               {job.position_number && (
                 <>
                   <span className="text-slate-300">·</span>
                   <span className="inline-flex items-center gap-1 text-xs">
-                    <Hash size={12} className="text-slate-400" />
+                    <Hash size={12} className="text-slate-500" />
                     পদ {job.position_number}
                   </span>
                 </>
@@ -194,7 +197,7 @@ function JobDetailView({
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${deadlineTone[deadline.urgency]}`}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12.5px] font-bold ${deadlineTone[deadline.urgency]}`}
               >
                 <CalendarClock size={12} />
                 {deadline.formatted}
@@ -205,8 +208,8 @@ function JobDetailView({
                 )}
               </span>
               {job.salary_range && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                  <Wallet size={12} className="text-slate-400" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[12.5px] font-semibold text-slate-600">
+                  <Wallet size={12} className="text-slate-500" />
                   {job.salary_range}
                 </span>
               )}
@@ -214,7 +217,7 @@ function JobDetailView({
           </div>
 
           <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5 lg:w-52">
-            <p className="text-[10px] font-bold text-slate-400">
+            <p className="text-[12px] font-bold text-slate-500">
               স্ট্যাটাস আপডেট করুন
             </p>
             <div className="mt-2">
@@ -224,7 +227,7 @@ function JobDetailView({
                 disabled={updatingStatus}
               />
             </div>
-            <p className="mt-2 text-[9px] leading-4 text-slate-400">
+            <p className="mt-2 text-[10.5px] leading-4 text-slate-500">
               {updatingStatus
                 ? "সংরক্ষণ হচ্ছে..."
                 : "পরিবর্তন সাথে সাথে সেভ হয়ে যাবে।"}
@@ -244,9 +247,9 @@ function JobDetailView({
           <span className="block">{deadline.formatted}</span>
           {deadline.label && (
             <span
-              className={`mt-0.5 block text-[10px] font-semibold ${
+              className={`mt-0.5 block text-[12px] font-semibold ${
                 deadline.urgency === "expired"
-                  ? "text-slate-400"
+                  ? "text-slate-500"
                   : deadline.urgency === "today" ||
                       deadline.urgency === "soon"
                     ? "text-rose-600"
@@ -276,7 +279,7 @@ function JobDetailView({
               <Globe2 size={16} />
             </span>
             <span className="min-w-0">
-              <span className="block text-[10px] font-semibold text-slate-400">
+              <span className="block text-[12px] font-semibold text-slate-500">
                 বিজ্ঞপ্তির লিঙ্ক
               </span>
               <span className="block truncate text-sm font-semibold text-slate-800">
@@ -284,7 +287,7 @@ function JobDetailView({
               </span>
             </span>
           </span>
-          <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-brand-600">
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] font-semibold text-brand-600">
             খুলুন
             <ExternalLink size={13} />
           </span>
@@ -301,7 +304,7 @@ function JobDetailView({
       {job.notes && (
         <section className="mt-4 rounded-3xl border border-slate-200/70 bg-white p-5 shadow-card">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <FileText size={16} className="text-slate-400" />
+            <FileText size={16} className="text-slate-500" />
             <h2 className="text-sm font-bold text-slate-900">গুরুত্বপূর্ণ নোট</h2>
           </div>
           <p className="mt-3 whitespace-pre-line rounded-xl bg-slate-50/80 p-3.5 text-sm leading-7 text-slate-600">
@@ -309,6 +312,15 @@ function JobDetailView({
           </p>
         </section>
       )}
+
+      {job.attachments && job.attachments.length > 0 && (
+        <AttachmentList attachments={job.attachments} />
+      )}
+
+      <JobAttachmentAdder
+        jobId={job.id}
+        attachments={job.attachments ?? []}
+      />
 
       <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
         <Button
@@ -332,7 +344,7 @@ function JobDetailView({
       </div>
 
       {(createdAt || updatedAt) && (
-        <p className="mt-5 text-center text-[10px] text-slate-300">
+        <p className="mt-5 text-center text-[12px] text-slate-300">
           {createdAt && <>যোগ করা হয়েছে {createdAt}</>}
           {createdAt && updatedAt && " · "}
           {updatedAt && <>সর্বশেষ আপডেট {updatedAt}</>}
@@ -420,6 +432,20 @@ export default function JobDetailPage({
     setDeleting(true);
     try {
       await deleteJob(id);
+
+      if (currentUser && job?.attachments?.length) {
+        const cleanup = await Promise.allSettled(
+          job.attachments.map((attachment) =>
+            deleteJobAttachment(attachment, currentUser),
+          ),
+        );
+        cleanup.forEach((result) => {
+          if (result.status === "rejected") {
+            console.error("Attached file cleanup failed:", result.reason);
+          }
+        });
+      }
+
       toast.success("চাকরি মুছে ফেলা হয়েছে");
       router.push("/dashboard");
     } catch (error) {
@@ -475,7 +501,7 @@ export default function JobDetailPage({
             </div>
           ) : !job ? (
             <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-card">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
                 <FileQuestion size={26} />
               </div>
               <h2 className="mt-4 text-lg font-bold text-slate-900">

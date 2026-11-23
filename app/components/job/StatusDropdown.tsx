@@ -42,7 +42,7 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
       </select>
       <ChevronDown
         size={14}
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500"
       />
     </div>
   );

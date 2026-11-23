@@ -8,6 +8,8 @@ import {
   ChevronDown,
   CircleAlert,
   ClipboardList,
+  LayoutGrid,
+  List as ListIcon,
   Plus,
   Search,
   SearchX,
@@ -28,6 +30,9 @@ import { ProtectedRoute } from "@/app/components/layout/ProtectedRoute";
 import { Button } from "@/app/components/ui/Button";
 
 type SortOption = "deadline" | "recent" | "title";
+type ViewMode = "grid" | "list";
+
+const VIEW_STORAGE_KEY = "chakri-tracker:job-view";
 
 const deadlineBadgeTone: Record<string, string> = {
   today: "bg-rose-400/15 text-rose-200",
@@ -47,6 +52,21 @@ export default function DashboardPage() {
     "all",
   );
   const [sortBy, setSortBy] = useState<SortOption>("deadline");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "grid";
+    return window.localStorage.getItem(VIEW_STORAGE_KEY) === "list"
+      ? "list"
+      : "grid";
+  });
+
+  const changeViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, mode);
+    } catch {
+      // Storage can be unavailable in private browsing; switching still works.
+    }
+  };
 
   const displayName =
     currentUser?.displayName?.trim() ||
@@ -145,7 +165,7 @@ export default function DashboardPage() {
 
             <div className="relative grid gap-6 lg:grid-cols-[1fr_310px] lg:items-center">
               <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-brand-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[12.5px] font-semibold text-brand-200">
                   <Sparkles size={12} className="text-accent-300" />
                   {getGreeting()}, {friendlyName}
                 </span>
@@ -155,7 +175,7 @@ export default function DashboardPage() {
                     গোছানো।
                   </span>
                 </h1>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-white/55">
+                <p className="mt-2 max-w-xl text-sm leading-7 text-white/75">
                   প্রতিটি আবেদন, ডেডলাইন, পরীক্ষা আর লগইন তথ্য—সব এক জায়গায়।
                   আজকের ছোট পদক্ষেপই কালকের বড় সুযোগ।
                 </p>
@@ -181,10 +201,10 @@ export default function DashboardPage() {
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  <span className="text-[12px] font-bold tracking-[0.12em] text-white/65">
                     পরবর্তী ডেডলাইন
                   </span>
-                  <CalendarDays size={14} className="text-white/35" />
+                  <CalendarDays size={14} className="text-white/60" />
                 </div>
 
                 {nextDeadline ? (
@@ -192,15 +212,15 @@ export default function DashboardPage() {
                     <p className="line-clamp-2 text-sm font-bold leading-snug text-white">
                       {nextDeadline.job.title}
                     </p>
-                    <p className="mt-1 truncate text-xs text-white/45">
+                    <p className="mt-1 truncate text-[13px] text-white/70">
                       {nextDeadline.job.organisation}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-mono text-[11px] text-white/60">
+                      <span className="text-[13px] font-medium text-white/80">
                         {nextDeadline.info.formatted}
                       </span>
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${
                           deadlineBadgeTone[nextDeadline.info.urgency] ??
                           "bg-white/10 text-white/70"
                         }`}
@@ -210,7 +230,7 @@ export default function DashboardPage() {
                     </div>
                     <Link
                       href={`/job/${nextDeadline.job.id}`}
-                      className="mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                      className="mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[12.5px] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                     >
                       বিস্তারিত দেখুন
                       <ArrowRight size={12} />
@@ -221,7 +241,7 @@ export default function DashboardPage() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-accent-200">
                       <Trophy size={14} />
                     </span>
-                    <p className="text-xs leading-5 text-white/50">
+                    <p className="text-[13px] leading-6 text-white/70">
                       কোনো আসন্ন ডেডলাইন নেই। শান্ত মনে প্রস্তুতি নিন—আমরা
                       হিসাব রাখছি।
                     </p>
@@ -273,7 +293,7 @@ export default function DashboardPage() {
               <div className="relative flex-1">
                 <Search
                   size={17}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
                 />
                 <input
                   type="text"
@@ -281,14 +301,14 @@ export default function DashboardPage() {
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="পদ, প্রতিষ্ঠান বা পদ সংখ্যা দিয়ে খুঁজুন..."
                   aria-label="আবেদন খুঁজুন"
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 transition-all hover:border-slate-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-10 pr-10 text-[15px] text-slate-900 placeholder:text-slate-500 transition-all hover:border-slate-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
                     aria-label="সার্চ মুছুন"
-                    className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
                   >
                     <X size={14} />
                   </button>
@@ -298,7 +318,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <label
                   htmlFor="sort-jobs"
-                  className="shrink-0 text-[11px] font-semibold text-slate-500"
+                  className="shrink-0 text-[12.5px] font-semibold text-slate-500"
                 >
                   সাজান:
                 </label>
@@ -317,7 +337,7 @@ export default function DashboardPage() {
                   </select>
                   <ChevronDown
                     size={14}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
                   />
                 </div>
               </div>
@@ -344,23 +364,62 @@ export default function DashboardPage() {
                 আপনার আবেদনসমূহ
               </h2>
               <p
-                className="mt-0.5 text-[11px] text-slate-400"
+                className="mt-0.5 text-[12.5px] text-slate-500"
                 aria-live="polite"
               >
                 {toBnDigits(filteredJobs.length)} / {toBnDigits(jobs.length)}{" "}
                 টি আবেদন দেখানো হচ্ছে
               </p>
             </div>
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 transition-colors hover:text-rose-600"
+            <div className="flex flex-wrap items-center gap-3">
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-500 transition-colors hover:text-rose-600"
+                >
+                  <X size={12} />
+                  সব ফিল্টার মুছুন
+                </button>
+              )}
+
+              <div
+                role="group"
+                aria-label="আবেদন দেখার ধরন"
+                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-soft"
               >
-                <X size={12} />
-                সব ফিল্টার মুছুন
-              </button>
-            )}
+                <button
+                  type="button"
+                  onClick={() => changeViewMode("grid")}
+                  aria-pressed={viewMode === "grid"}
+                  aria-label="কার্ড ভিউ"
+                  title="কার্ড ভিউ"
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-brand-600 text-white shadow-soft"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <LayoutGrid size={15} />
+                  <span className="hidden sm:inline">কার্ড</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  aria-label="লিস্ট ভিউ"
+                  title="লিস্ট ভিউ"
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                    viewMode === "list"
+                      ? "bg-brand-600 text-white shadow-soft"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <ListIcon size={15} />
+                  <span className="hidden sm:inline">লিস্ট</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="mt-4">
@@ -423,13 +482,13 @@ export default function DashboardPage() {
                             key={item.step}
                             className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
                           >
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 font-mono text-[10px] font-bold text-white">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 font-mono text-[12px] font-bold text-white">
                               {item.step}
                             </span>
                             <p className="mt-2.5 text-xs font-bold text-slate-800">
                               {item.title}
                             </p>
-                            <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                            <p className="mt-1 text-[12.5px] leading-5 text-slate-500">
                               {item.text}
                             </p>
                           </div>
@@ -457,7 +516,7 @@ export default function DashboardPage() {
               </div>
             ) : filteredJobs.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-12 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
                   <SearchX size={24} />
                 </div>
                 <h3 className="mt-4 text-base font-bold text-slate-900">
@@ -473,6 +532,12 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               </div>
+            ) : viewMode === "list" ? (
+              <div className="flex flex-col gap-3">
+                {filteredJobs.map((job) => (
+                  <JobCard key={job.id} job={job} variant="list" />
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {filteredJobs.map((job) => (
@@ -482,7 +547,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <p className="mt-10 text-center text-[10px] text-slate-300">
+          <p className="mt-10 text-center text-[12.5px] text-slate-500">
             চাকরি ট্র্যাকার · আপনার সব তথ্য আপনার অ্যাকাউন্টে সুরক্ষিত
           </p>
         </main>

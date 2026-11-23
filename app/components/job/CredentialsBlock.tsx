@@ -52,12 +52,12 @@ export const CredentialsBlock: React.FC<CredentialsBlockProps> = ({
           </span>
           <div>
             <h2 className="text-sm font-bold text-slate-900">পোর্টাল লগইন তথ্য</h2>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[12px] text-slate-500">
               আবেদন পোর্টালে প্রবেশের জন্য
             </p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold text-emerald-700">
+        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10.5px] font-bold text-emerald-700">
           <ShieldCheck size={10} />
           শুধু আপনার অ্যাকাউন্টে
         </span>
@@ -67,7 +67,7 @@ export const CredentialsBlock: React.FC<CredentialsBlockProps> = ({
         {username && (
           <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-slate-400">
+              <p className="text-[12px] font-semibold text-slate-600">
                 ইউজারনেম / মোবাইল
               </p>
               <p className="mt-0.5 select-all break-all font-mono text-sm font-bold text-slate-800">
@@ -77,7 +77,7 @@ export const CredentialsBlock: React.FC<CredentialsBlockProps> = ({
             <button
               type="button"
               onClick={() => handleCopy(username, "ইউজারনেম", "username")}
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-soft transition-all hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-slate-600 shadow-soft transition-all hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
               title="ইউজারনেম কপি করুন"
             >
               {copiedField === "username" ? (
@@ -93,7 +93,7 @@ export const CredentialsBlock: React.FC<CredentialsBlockProps> = ({
         {password && (
           <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-slate-400">
+              <p className="text-[12px] font-semibold text-slate-600">
                 পাসওয়ার্ড
               </p>
               <p className="mt-0.5 select-all break-all font-mono text-sm font-bold text-slate-800">
@@ -115,7 +115,7 @@ export const CredentialsBlock: React.FC<CredentialsBlockProps> = ({
               <button
                 type="button"
                 onClick={() => handleCopy(password, "পাসওয়ার্ড", "password")}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-soft transition-all hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-slate-600 shadow-soft transition-all hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
                 title="পাসওয়ার্ড কপি করুন"
               >
                 {copiedField === "password" ? (

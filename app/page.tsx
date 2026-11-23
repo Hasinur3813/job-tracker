@@ -122,12 +122,12 @@ function MiniJobCard({
     <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-soft">
       <span className={`absolute inset-y-0 left-0 w-1 ${tone.bar}`} />
       <div className="pl-1.5">
-        <p className="truncate text-[13px] font-bold text-slate-900">{title}</p>
-        <p className="mt-0.5 truncate text-[11px] text-slate-400">
+        <p className="truncate text-[14px] font-bold text-slate-900">{title}</p>
+        <p className="mt-0.5 truncate text-[12.5px] text-slate-500">
           {organisation}
         </p>
         <span
-          className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${tone.chip}`}
+          className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[12px] font-bold ${tone.chip}`}
         >
           {deadlineline}
         </span>
@@ -164,7 +164,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.45 }}
-                  className="inline-flex items-center gap-2 rounded-full border border-brand-200/70 bg-white/80 px-3 py-1 text-[11px] font-bold text-brand-700 shadow-soft backdrop-blur-sm"
+                  className="inline-flex items-center gap-2 rounded-full border border-brand-200/70 bg-white/80 px-3 py-1 text-[12.5px] font-bold text-brand-700 shadow-soft backdrop-blur-sm"
                 >
                   <Sparkles size={13} className="text-accent-500" />
                   চাকরি আবেদন ব্যবস্থাপনার আধুনিক, শান্ত সমাধান
@@ -241,7 +241,7 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: 0.34 }}
                   className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2"
                 >
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-[12px] font-semibold text-slate-500">
                     <GoogleIcon size={12} />
                     Google দিয়ে সাইন-ইন
                   </span>
@@ -250,7 +250,7 @@ export default function Home() {
                     .map((point) => (
                       <span
                         key={point}
-                        className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-slate-500"
+                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-500"
                       >
                         <CheckCircle2 size={12} className="text-emerald-500" />
                         {point}
@@ -276,19 +276,19 @@ export default function Home() {
                       <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
                       <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
                     </div>
-                    <span className="rounded-md bg-slate-50 px-2 py-0.5 font-mono text-[9px] text-slate-400">
+                    <span className="rounded-md bg-slate-50 px-2 py-0.5 font-mono text-[10.5px] text-slate-500">
                       chakri-tracker · ড্যাশবোর্ড
                     </span>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] text-slate-400">শুভ সন্ধ্যা</p>
+                      <p className="text-[12px] text-slate-500">শুভ সন্ধ্যা</p>
                       <p className="text-sm font-black text-slate-900">
                         আপনার ৩টি আবেদন চলছে
                       </p>
                     </div>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-brand-500 to-violet-500 text-[11px] font-bold text-white">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-brand-500 to-violet-500 text-[12.5px] font-bold text-white">
                       রা
                     </span>
                   </div>
@@ -306,7 +306,7 @@ export default function Home() {
                         <p className={`text-lg font-black ${stat.cls}`}>
                           {stat.value}
                         </p>
-                        <p className="text-[9px] font-semibold text-slate-400">
+                        <p className="text-[10.5px] font-semibold text-slate-500">
                           {stat.label}
                         </p>
                       </div>
@@ -334,7 +334,7 @@ export default function Home() {
                     />
                   </div>
 
-                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-2.5 text-[10px] font-medium text-emerald-700">
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-2.5 text-[12px] font-medium text-emerald-700">
                     <ShieldCheck size={14} className="shrink-0" />
                     Firestore সিকিউরিটি রুলসে আপনার ডেটা সুরক্ষিত
                   </div>
@@ -344,7 +344,7 @@ export default function Home() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-50 text-amber-600">
                     <BellRing size={13} />
                   </span>
-                  <span className="text-[10px] font-bold text-slate-700">
+                  <span className="text-[12px] font-bold text-slate-700">
                     ডেডলাইন রিমাইন্ডার সক্রিয়
                   </span>
                 </div>
@@ -354,7 +354,7 @@ export default function Home() {
         </section>
 
         <section className="border-y border-slate-200/60 bg-white/70 py-3">
-          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-4 text-[11px] font-semibold text-slate-400 sm:px-6">
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-4 text-[12.5px] font-semibold text-slate-500 sm:px-6">
             {trustPoints.map((point) => (
               <span key={point} className="inline-flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-emerald-500" />
@@ -369,7 +369,7 @@ export default function Home() {
           className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20"
         >
           <div className="mx-auto max-w-2xl text-center">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand-600">
+            <span className="font-mono text-[12px] font-bold uppercase tracking-[0.22em] text-brand-600">
               Features
             </span>
             <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-[2.3rem] sm:leading-tight">
@@ -411,7 +411,7 @@ export default function Home() {
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
               <div>
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand-600">
+                <span className="font-mono text-[12px] font-bold uppercase tracking-[0.22em] text-brand-600">
                   How it works
                 </span>
                 <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
@@ -464,7 +464,7 @@ export default function Home() {
 
             <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
               <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-brand-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[12.5px] font-bold text-brand-200">
                   <ShieldCheck size={13} className="text-emerald-400" />
                   নিরাপত্তা, কোনো বাড়তি চাপ ছাড়াই
                 </span>
@@ -473,7 +473,7 @@ export default function Home() {
                   <br />
                   Firestore সিকিউরিটি রুলসে সুরক্ষিত।
                 </h2>
-                <p className="mt-3 max-w-xl text-sm leading-7 text-white/50">
+                <p className="mt-3 max-w-xl text-sm leading-7 text-white/75">
                   প্রতিটি আবেদন আপনার নিজের অ্যাকাউন্টের ডকুমেন্টে থাকে; অন্য
                   কোনো ব্যবহারকারী তা দেখতে পারে না। Google বা ইমেইল—দুভাবেই
                   লগইন করা যায়, আর যেকোনো সময় অ্যাকাউন্ট মুছে ফেলা যায়।
@@ -496,7 +496,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                <p className="mt-5 max-w-xl rounded-xl border border-white/10 bg-white/[0.04] p-3 text-[10px] leading-5 text-white/35">
+                <p className="mt-5 max-w-xl rounded-xl border border-white/10 bg-white/[0.04] p-3 text-[12px] leading-5 text-white/65">
                   স্বচ্ছতার জন্য: পোর্টালের ক্রেডেনশিয়াল এন্ড-টু-এন্ড
                   এনক্রিপ্টেড নয়—এগুলো আপনার ব্যক্তিগত Firestore
                   অ্যাকাউন্টে সংরক্ষিত থাকে, তাই কারও সঙ্গে শেয়ার করবেন না।
@@ -545,7 +545,7 @@ export default function Home() {
                 {currentUser ? "নতুন আবেদন যোগ করুন" : "ফ্রি অ্যাকাউন্ট খুলুন"}
                 <ArrowRight size={15} />
               </Link>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[12.5px] text-slate-500">
                 Google দিয়ে এক ক্লিকেই সাইন-ইন
               </span>
             </div>
@@ -557,11 +557,11 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6">
           <div className="flex items-center gap-3">
             <Logo size="sm" />
-            <span className="hidden text-[10px] text-slate-400 sm:block">
+            <span className="hidden text-[12px] text-slate-500 sm:block">
               চাকরির আবেদন, শান্তভাবে গোছানো।
             </span>
           </div>
-          <div className="flex items-center gap-4 text-[11px] font-medium text-slate-400">
+          <div className="flex items-center gap-4 text-[12.5px] font-medium text-slate-500">
             <button
               type="button"
               onClick={scrollToFeatures}

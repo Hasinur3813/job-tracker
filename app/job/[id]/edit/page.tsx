@@ -14,6 +14,12 @@ import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useJobMutations } from "@/lib/hooks/useJobMutations";
 import type { JobDocument } from "@/lib/hooks/useJobs";
+import type { JobAttachment } from "@/lib/types/attachment";
+import {
+  deleteJobAttachment,
+  uploadJobAttachment,
+} from "@/lib/utils/attachments";
+import { toBnDigits } from "@/lib/utils/bn";
 import {
   jobDocumentToFormInput,
   toJobPayload,
@@ -21,7 +27,10 @@ import {
 } from "@/lib/validation/jobFormSchema";
 import { Header } from "@/app/components/layout/Header";
 import { ProtectedRoute } from "@/app/components/layout/ProtectedRoute";
-import { JobForm } from "@/app/components/job/JobForm";
+import {
+  JobForm,
+  type JobFormAttachmentChanges,
+} from "@/app/components/job/JobForm";
 import { Button } from "@/app/components/ui/Button";
 
 export default function JobEditPage({
@@ -38,6 +47,7 @@ export default function JobEditPage({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [savingLabel, setSavingLabel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUser || !id) return;
@@ -78,13 +88,64 @@ export default function JobEditPage({
     };
   }, [currentUser, id, reloadKey]);
 
-  const handleSubmit = async (data: JobFormInput) => {
+  const handleSubmit = async (
+    data: JobFormInput,
+    changes: JobFormAttachmentChanges,
+  ) => {
+    if (!currentUser) {
+      toast.error("লগইন করা প্রয়োজন।");
+      return;
+    }
+
     setSaving(true);
+    const uploaded: JobAttachment[] = [];
+
     try {
-      await updateJob(id, toJobPayload(data));
+      if (changes.files.length > 0) {
+        for (const [index, file] of changes.files.entries()) {
+          setSavingLabel(
+            changes.files.length > 1
+              ? `ফাইল আপলোড হচ্ছে… ${toBnDigits(index + 1)}/${toBnDigits(changes.files.length)}`
+              : "ফাইল আপলোড হচ্ছে…",
+          );
+          uploaded.push(await uploadJobAttachment(file, currentUser));
+        }
+      }
+
+      setSavingLabel("পরিবর্তন সংরক্ষণ হচ্ছে…");
+      await updateJob(id, {
+        ...toJobPayload(data),
+        attachments: [...changes.attachments, ...uploaded],
+      });
+
+      if (changes.removedAttachments.length > 0) {
+        const cleanup = await Promise.allSettled(
+          changes.removedAttachments.map((attachment) =>
+            deleteJobAttachment(attachment, currentUser),
+          ),
+        );
+        cleanup.forEach((result) => {
+          if (result.status === "rejected") {
+            console.error("Removed file cleanup failed:", result.reason);
+          }
+        });
+      }
+
       toast.success("চাকরির তথ্য সফলভাবে আপডেট হয়েছে ✓");
       router.push(`/job/${id}`);
     } catch (error) {
+      if (uploaded.length > 0) {
+        const cleanup = await Promise.allSettled(
+          uploaded.map((attachment) =>
+            deleteJobAttachment(attachment, currentUser),
+          ),
+        );
+        cleanup.forEach((result) => {
+          if (result.status === "rejected") {
+            console.error("Uploaded file cleanup failed:", result.reason);
+          }
+        });
+      }
       toast.error(
         error instanceof Error
           ? error.message
@@ -92,6 +153,7 @@ export default function JobEditPage({
       );
     } finally {
       setSaving(false);
+      setSavingLabel(null);
     }
   };
 
@@ -146,7 +208,7 @@ export default function JobEditPage({
             </div>
           ) : !job ? (
             <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-card">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
                 <FileQuestion size={26} />
               </div>
               <h2 className="mt-4 text-lg font-bold text-slate-900">
@@ -178,7 +240,7 @@ export default function JobEditPage({
                   <ArrowLeft size={17} />
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.18em] text-slate-500">
                     ড্যাশবোর্ড / সম্পাদনা
                   </p>
                   <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900">
@@ -192,8 +254,10 @@ export default function JobEditPage({
 
               <JobForm
                 initialValues={jobDocumentToFormInput(job)}
+                initialAttachments={job.attachments ?? []}
                 submitLabel="আপডেট করুন"
                 saving={saving}
+                savingLabel={savingLabel ?? undefined}
                 onSubmit={handleSubmit}
                 onCancel={() => router.push(`/job/${id}`)}
               />

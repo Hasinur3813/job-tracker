@@ -78,8 +78,8 @@ export function Logo({
         </span>
         {showTagline && (
           <span
-            className={`mt-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] ${
-              light ? "text-white/45" : "text-slate-400"
+            className={`mt-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.22em] ${
+              light ? "text-white/70" : "text-slate-500"
             }`}
           >
             Chakri Tracker

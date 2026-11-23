@@ -9,6 +9,7 @@ import {
   EyeOff,
   FileText,
   Lock,
+  Paperclip,
   Save,
   ShieldCheck,
 } from "lucide-react";
@@ -17,17 +18,31 @@ import {
   type JobFormInput,
 } from "@/lib/validation/jobFormSchema";
 import { STATUS_CONFIG } from "@/lib/constants/statusConfig";
+import type { JobAttachment } from "@/lib/types/attachment";
+import { validateAttachmentSelection } from "@/lib/utils/attachments";
 import { toBnDigits } from "@/lib/utils/bn";
 import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
 import { Select } from "@/app/components/ui/Select";
 import { Textarea } from "@/app/components/ui/Textarea";
+import { AttachmentManager } from "./AttachmentManager";
+
+export interface JobFormAttachmentChanges {
+  files: File[];
+  attachments: JobAttachment[];
+  removedAttachments: JobAttachment[];
+}
 
 interface JobFormProps {
   initialValues: JobFormInput;
+  initialAttachments?: JobAttachment[];
   submitLabel: string;
   saving: boolean;
-  onSubmit: (data: JobFormInput) => Promise<void>;
+  savingLabel?: string;
+  onSubmit: (
+    data: JobFormInput,
+    attachmentChanges: JobFormAttachmentChanges,
+  ) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -67,7 +82,7 @@ function FormSection({
           {icon}
         </span>
         <div>
-          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.18em] text-slate-500">
             ধাপ {step}
           </p>
           <h2 className="mt-0.5 text-base font-bold tracking-tight text-slate-900">
@@ -85,12 +100,21 @@ function FormSection({
 
 export function JobForm({
   initialValues,
+  initialAttachments = [],
   submitLabel,
   saving,
+  savingLabel,
   onSubmit,
   onCancel,
 }: JobFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [attachments, setAttachments] =
+    useState<JobAttachment[]>(initialAttachments);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [removedAttachments, setRemovedAttachments] = useState<JobAttachment[]>(
+    [],
+  );
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
 
   const {
     register,
@@ -116,8 +140,66 @@ export function JobForm({
     label: info.label,
   }));
 
+  const handleFilesSelected = (files: File[]) => {
+    const validation = validateAttachmentSelection(
+      files,
+      attachments.length + selectedFiles.length,
+    );
+    if (validation) {
+      setAttachmentError(validation);
+      return;
+    }
+    setSelectedFiles((current) => [...current, ...files]);
+    setAttachmentError(null);
+  };
+
+  const handleRemoveExisting = (publicId: string) => {
+    const target = attachments.find(
+      (attachment) => attachment.public_id === publicId,
+    );
+    if (!target) return;
+    setAttachments((current) =>
+      current.filter((attachment) => attachment.public_id !== publicId),
+    );
+    setRemovedAttachments((current) => [...current, target]);
+    setAttachmentError(null);
+  };
+
+  const handleRemoveSelected = (index: number) => {
+    setSelectedFiles((current) =>
+      current.filter((_, currentIndex) => currentIndex !== index),
+    );
+    setAttachmentError(null);
+  };
+
+  const handleFormSubmit = async (data: JobFormInput) => {
+    const validation = validateAttachmentSelection(
+      selectedFiles,
+      attachments.length,
+    );
+    if (validation) {
+      setAttachmentError(validation);
+      document.getElementById("job-attachments")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      return;
+    }
+
+    setAttachmentError(null);
+    await onSubmit(data, {
+      files: selectedFiles,
+      attachments,
+      removedAttachments,
+    });
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form
+      onSubmit={handleSubmit(handleFormSubmit)}
+      className="space-y-4"
+      noValidate
+    >
       <fieldset disabled={saving} className="min-w-0 space-y-4">
         <FormSection
           step="০১"
@@ -210,15 +292,38 @@ export function JobForm({
           />
         </FormSection>
 
+        <FormSection
+          step="০৩"
+          title="সংযুক্ত ফাইল ও ডকুমেন্ট"
+          description="আবেদনের কপি, প্রবেশপত্র বা প্রয়োজনীয় ফাইল সংরক্ষণ করুন।"
+          icon={<Paperclip size={18} />}
+        >
+          <div id="job-attachments">
+            <AttachmentManager
+              attachments={attachments}
+              selectedFiles={selectedFiles}
+              error={attachmentError}
+              disabled={saving}
+              onFilesSelected={handleFilesSelected}
+              onRemoveExisting={handleRemoveExisting}
+              onRemoveSelected={handleRemoveSelected}
+            />
+          </div>
+          <p className="text-[11.5px] leading-5 text-slate-500">
+            ফাইলগুলো Cloudinary-তে আপনার অ্যাকাউন্টের নিজস্ব ফোল্ডারে রাখা হয়।
+            পরে বিবরণ পেজ থেকে দেখা ও ডাউনলোড করা যাবে।
+          </p>
+        </FormSection>
+
         {categoryValue === "govt" && (
           <FormSection
-            step="০৩"
+            step="০৪"
             title="পোর্টাল লগইন তথ্য"
             description="সরকারি আবেদন পোর্টালে প্রবেশের জন্য প্রয়োজনীয় তথ্য।"
             icon={<Lock size={18} />}
             tone="brand"
           >
-            <div className="flex items-start gap-2 rounded-xl border border-brand-200/70 bg-white/70 p-3 text-[11px] leading-5 text-brand-800">
+            <div className="flex items-start gap-2 rounded-xl border border-brand-200/70 bg-white/70 p-3 text-[12.5px] leading-5 text-brand-800">
               <ShieldCheck
                 size={14}
                 className="mt-0.5 shrink-0 text-brand-600"
@@ -250,7 +355,7 @@ export function JobForm({
                     aria-label={
                       showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"
                     }
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white hover:text-slate-600"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-white hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -279,7 +384,7 @@ export function JobForm({
           className="sm:min-w-40"
         >
           <Save size={16} />
-          {submitLabel}
+          {saving && savingLabel ? savingLabel : submitLabel}
         </Button>
       </div>
     </form>

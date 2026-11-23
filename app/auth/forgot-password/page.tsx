@@ -221,7 +221,7 @@ export default function ForgotPasswordPage() {
             রিসেট লিংক পাঠান
           </Button>
 
-          <p className="text-center text-[11px] leading-5 text-slate-400">
+          <p className="text-center text-[12.5px] leading-5 text-slate-500">
             নিরাপত্তার স্বার্থে আমরা নিশ্চিত করি না যে এই ইমেইলে অ্যাকাউন্ট
             আছে কি নেই।
           </p>

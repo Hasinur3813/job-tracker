@@ -74,7 +74,11 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`h-full ${hindSiliguri.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-full flex flex-col font-sans antialiased">
+      {/* Grammarly and similar extensions inject attributes into <body>. */}
+      <body
+        className="min-h-full flex flex-col font-sans antialiased"
+        suppressHydrationWarning
+      >
         <AuthProvider>
           {children}
           <Toaster

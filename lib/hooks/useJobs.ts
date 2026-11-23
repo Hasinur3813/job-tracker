@@ -10,6 +10,7 @@ import {
   getFirestoreErrorMessage,
   reportFirestoreError,
 } from "@/lib/firebase/firestoreErrors";
+import type { JobAttachment } from "@/lib/types/attachment";
 import { useAuth } from "./useAuth";
 
 export interface JobDocument {
@@ -34,6 +35,7 @@ export interface JobDocument {
     username?: string;
     password?: string;
   };
+  attachments?: JobAttachment[];
   created_at?: unknown;
   updated_at?: unknown;
 }

@@ -45,14 +45,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={id}
-            className="mb-1.5 block text-[13px] font-semibold text-slate-700"
+            className="mb-1.5 block text-[14px] font-semibold text-slate-700"
           >
             {label}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
               {leftIcon}
             </span>
           )}
@@ -64,7 +64,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={describedBy}
             className={`
               h-11 w-full rounded-xl border bg-white text-sm text-slate-900
-              placeholder:text-slate-400
+              placeholder:text-slate-500
               transition-all duration-200
               focus:border-brand-500 focus:outline-none focus:ring-4
               disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500

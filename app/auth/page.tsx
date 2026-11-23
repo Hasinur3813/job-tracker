@@ -112,7 +112,7 @@ function PasswordMeter({ password }: { password: string }) {
           />
         ))}
       </div>
-      <p className="mt-1.5 text-[11px] font-medium text-slate-500">
+      <p className="mt-1.5 text-[12.5px] font-medium text-slate-500">
         পাসওয়ার্ডের শক্তি:{" "}
         <span className="font-semibold text-slate-700">
           {labels[Math.min(score, 4)]}
@@ -241,7 +241,7 @@ function AuthContent() {
       }
       footer={
         <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="flex items-center gap-1.5 font-medium text-slate-400">
+          <span className="flex items-center gap-1.5 font-medium text-slate-500">
             <Sparkles size={13} className="text-accent-500" />
             সব ফিচার, আজীবন ফ্রি
           </span>
@@ -259,7 +259,7 @@ function AuthContent() {
           type="button"
           onClick={() => switchMode("login")}
           aria-pressed={isLogin}
-          className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition-all ${
+          className={`rounded-lg px-3 py-2 text-[14px] font-semibold transition-all ${
             isLogin
               ? "bg-white text-brand-700 shadow-sm"
               : "text-slate-500 hover:text-slate-800"
@@ -271,7 +271,7 @@ function AuthContent() {
           type="button"
           onClick={() => switchMode("register")}
           aria-pressed={!isLogin}
-          className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition-all ${
+          className={`rounded-lg px-3 py-2 text-[14px] font-semibold transition-all ${
             !isLogin
               ? "bg-white text-brand-700 shadow-sm"
               : "text-slate-500 hover:text-slate-800"
@@ -297,7 +297,7 @@ function AuthContent() {
 
       <div className="my-5 flex items-center gap-3">
         <span className="h-px flex-1 bg-slate-200" />
-        <span className="text-[11px] font-semibold text-slate-400">
+        <span className="text-[12.5px] font-semibold text-slate-500">
           অথবা ইমেইল দিয়ে
         </span>
         <span className="h-px flex-1 bg-slate-200" />
@@ -341,7 +341,7 @@ function AuthContent() {
                     aria-label={
                       showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"
                     }
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -408,7 +408,7 @@ function AuthContent() {
                     aria-label={
                       showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"
                     }
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -434,7 +434,7 @@ function AuthContent() {
                   aria-label={
                     showConfirm ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-600"
                 >
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -455,7 +455,7 @@ function AuthContent() {
               অ্যাকাউন্ট তৈরি করুন
             </Button>
 
-            <p className="text-center text-[11px] leading-5 text-slate-400">
+            <p className="text-center text-[12.5px] leading-5 text-slate-500">
               অ্যাকাউন্ট তৈরি করলে আপনার তথ্য শুধুমাত্র আপনার অ্যাকাউন্টের
               সাথে যুক্ত থাকবে।
             </p>
@@ -463,8 +463,8 @@ function AuthContent() {
         )}
       </AnimatePresence>
 
-      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-[11px]">
-        <span className="text-slate-400">
+      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-[12.5px]">
+        <span className="text-slate-500">
           {isLogin ? "অ্যাকাউন্ট নেই?" : "আগে থেকেই অ্যাকাউন্ট আছে?"}
         </span>
         <button

@@ -127,7 +127,7 @@ export const Header: React.FC = () => {
               <Link
                 key={link.path}
                 href={link.path}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[14px] font-semibold transition-all ${
                   active
                     ? "bg-brand-50 text-brand-700"
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
@@ -141,7 +141,7 @@ export const Header: React.FC = () => {
 
           <Link
             href="/#features-section"
-            className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[14px] font-semibold text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-900"
           >
             <Compass size={15} />
             <span>ফিচারসমূহ</span>
@@ -165,14 +165,14 @@ export const Header: React.FC = () => {
                     {accountPrimary}
                   </span>
                   {accountSecondary && (
-                    <span className="truncate text-[10px] text-slate-400">
+                    <span className="truncate text-[12px] text-slate-500">
                       {accountSecondary}
                     </span>
                   )}
                 </span>
                 <ChevronDown
                   size={14}
-                  className={`text-slate-400 transition-transform ${
+                  className={`text-slate-500 transition-transform ${
                     accountOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -190,7 +190,7 @@ export const Header: React.FC = () => {
                         {accountPrimary}
                       </p>
                       {accountSecondary && (
-                        <p className="truncate text-[11px] text-slate-400">
+                        <p className="truncate text-[12.5px] text-slate-500">
                           {accountSecondary}
                         </p>
                       )}
@@ -204,7 +204,7 @@ export const Header: React.FC = () => {
                       onClick={() => setAccountOpen(false)}
                       className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                     >
-                      <LayoutDashboard size={15} className="text-slate-400" />
+                      <LayoutDashboard size={15} className="text-slate-500" />
                       আমার ড্যাশবোর্ড
                     </Link>
                     <Link
@@ -213,7 +213,7 @@ export const Header: React.FC = () => {
                       onClick={() => setAccountOpen(false)}
                       className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                     >
-                      <Plus size={15} className="text-slate-400" />
+                      <Plus size={15} className="text-slate-500" />
                       নতুন আবেদন যোগ করুন
                     </Link>
                   </div>
@@ -310,7 +310,7 @@ export const Header: React.FC = () => {
                       {accountPrimary}
                     </p>
                     {accountSecondary && (
-                      <p className="truncate text-xs text-slate-400">
+                      <p className="truncate text-xs text-slate-500">
                         {accountSecondary}
                       </p>
                     )}

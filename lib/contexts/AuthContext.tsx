@@ -20,6 +20,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
+import { syncUserProfile } from "@/lib/firebase/userProfile";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -43,6 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+
+      if (user) {
+        void syncUserProfile(user).catch((error) => {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          console.error(`User profile sync failed for ${user.uid}: ${message}`);
+        });
+      }
     });
     return unsubscribe;
   }, []);

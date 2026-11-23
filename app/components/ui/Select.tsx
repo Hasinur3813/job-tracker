@@ -38,7 +38,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={id}
-            className="mb-1.5 block text-[13px] font-semibold text-slate-700"
+            className="mb-1.5 block text-[14px] font-semibold text-slate-700"
           >
             {label}
           </label>
@@ -71,7 +71,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           <ChevronDown
             size={16}
-            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500"
           />
         </div>
         {error ? (

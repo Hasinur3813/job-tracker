@@ -46,7 +46,7 @@ export const STATUS_CONFIG: Record<JobStatusType, StatusInfo> = {
   },
   skipped: {
     label: "বাদ দেওয়া হয়েছে",
-    color: "bg-slate-100 text-slate-400 border border-slate-200",
-    dot: "bg-slate-300",
+    color: "bg-slate-100 text-slate-600 border border-slate-200",
+    dot: "bg-slate-500",
   },
 };

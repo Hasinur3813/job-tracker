@@ -94,8 +94,8 @@ export const StatCards: React.FC<StatCardsProps> = ({ jobs }) => {
           <div className="relative flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p
-                className={`text-[11px] font-semibold ${
-                  card.featured ? "text-white/65" : "text-slate-500"
+                className={`text-[12.5px] font-semibold ${
+                  card.featured ? "text-white/80" : "text-slate-600"
                 }`}
               >
                 {card.title}
@@ -108,8 +108,8 @@ export const StatCards: React.FC<StatCardsProps> = ({ jobs }) => {
                 {toBnDigits(card.count)}
               </p>
               <p
-                className={`mt-1 truncate text-[10px] ${
-                  card.featured ? "text-white/45" : "text-slate-400"
+                className={`mt-1 truncate text-[12px] ${
+                  card.featured ? "text-white/65" : "text-slate-500"
                 }`}
               >
                 {card.caption}

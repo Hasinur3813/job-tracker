@@ -55,8 +55,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   return (
     <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <SlidersHorizontal size={14} className="text-slate-400" />
+        <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-600">
+          <SlidersHorizontal size={14} className="text-slate-500" />
           ক্যাটাগরি
         </div>
         <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100/90 p-1">
@@ -68,18 +68,18 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 type="button"
                 onClick={() => setSelectedCategory(category.value)}
                 aria-pressed={active}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-all ${
                   active
                     ? "bg-white text-brand-700 shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 {category.label}
                 <span
-                  className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold ${
+                  className={`rounded-full px-1.5 py-0.5 font-mono text-[10.5px] font-bold ${
                     active
                       ? "bg-brand-50 text-brand-600"
-                      : "bg-white/70 text-slate-400"
+                      : "bg-white/80 text-slate-600"
                   }`}
                 >
                   {toBnDigits(category.count)}
@@ -94,12 +94,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500">স্ট্যাটাস</span>
+          <span className="text-[13px] font-semibold text-slate-600">স্ট্যাটাস</span>
           {hasActiveFilter && (
             <button
               type="button"
               onClick={onReset}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 transition-colors hover:text-rose-600"
+              className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-slate-500 transition-colors hover:text-rose-600"
             >
               <RotateCcw size={11} />
               রিসেট
@@ -112,18 +112,18 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             type="button"
             onClick={() => setSelectedStatus("all")}
             aria-pressed={selectedStatus === "all"}
-            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-all ${
               selectedStatus === "all"
                 ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-800"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
             }`}
           >
             সব
             <span
-              className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold ${
+              className={`rounded-full px-1.5 py-0.5 font-mono text-[10.5px] font-bold ${
                 selectedStatus === "all"
                   ? "bg-white/15 text-white"
-                  : "bg-slate-100 text-slate-400"
+                  : "bg-slate-100 text-slate-600"
               }`}
             >
               {toBnDigits(jobs.length)}
@@ -138,10 +138,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 type="button"
                 onClick={() => setSelectedStatus(value as JobStatusType)}
                 aria-pressed={active}
-                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-all ${
                   active
                     ? "border-brand-600 bg-brand-600 text-white shadow-[0_8px_20px_-12px_rgba(91,61,245,0.9)]"
-                    : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
                 }`}
               >
                 <span
@@ -151,10 +151,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 />
                 {info.label}
                 <span
-                  className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold ${
+                  className={`rounded-full px-1.5 py-0.5 font-mono text-[10.5px] font-bold ${
                     active
                       ? "bg-white/15 text-white"
-                      : "bg-slate-100 text-slate-400"
+                      : "bg-slate-100 text-slate-600"
                   }`}
                 >
                   {toBnDigits(statusCounts[value] ?? 0)}

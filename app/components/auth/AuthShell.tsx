@@ -62,13 +62,13 @@ export function AuthShell({
 
             <div className="relative flex items-center justify-between">
               <Logo light />
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-white/75">
                 Since 2025
               </span>
             </div>
 
             <div className="relative mt-12">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-brand-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[12.5px] font-semibold text-brand-200">
                 <Sparkles size={12} className="text-accent-300" />
                 সম্পূর্ণ ফ্রি · শুরু করতে ৩০ সেকেন্ড
               </span>
@@ -82,7 +82,7 @@ export function AuthShell({
                 </span>
               </h2>
 
-              <p className="mt-4 max-w-sm text-sm leading-7 text-white/55">
+              <p className="mt-4 max-w-sm text-sm leading-7 text-white/75">
                 সরকারি থেকে বেসরকারি—প্রতিটি আবেদন, পরীক্ষা আর ফলাফলের
                 হিসাব রাখুন এক শান্ত, পরিষ্কার ড্যাশবোর্ডে।
               </p>
@@ -95,10 +95,10 @@ export function AuthShell({
                     {feature.icon}
                   </span>
                   <span>
-                    <span className="block text-[13px] font-semibold text-white/90">
+                    <span className="block text-[14px] font-semibold text-white/90">
                       {feature.title}
                     </span>
-                    <span className="mt-0.5 block text-xs leading-5 text-white/45">
+                    <span className="mt-0.5 block text-xs leading-5 text-white/70">
                       {feature.description}
                     </span>
                   </span>
@@ -109,24 +109,24 @@ export function AuthShell({
             <div className="relative mt-auto pt-10">
               <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
+                  <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.16em] text-white/65">
                     পরবর্তী ডেডলাইন
                   </span>
-                  <span className="rounded-full bg-accent-400/15 px-2.5 py-0.5 text-[10px] font-bold text-accent-200">
+                  <span className="rounded-full bg-accent-400/15 px-2.5 py-0.5 text-[12px] font-bold text-accent-200">
                     ৩ দিন বাকি
                   </span>
                 </div>
                 <p className="mt-3 text-sm font-bold text-white">
                   সহকারী প্রোগ্রামার
                 </p>
-                <p className="mt-0.5 text-xs text-white/45">
+                <p className="mt-0.5 text-xs text-white/70">
                   বাংলাদেশ ব্যাংক · সরকারি
                 </p>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
                   <div className="h-full w-[72%] rounded-full bg-linear-to-r from-brand-400 to-accent-300" />
                 </div>
               </div>
-              <p className="mt-4 flex items-center gap-1.5 text-[11px] text-white/35">
+              <p className="mt-4 flex items-center gap-1.5 text-[12.5px] text-white/65">
                 <ShieldCheck size={12} className="text-emerald-400/80" />
                 Firebase-সুরক্ষিত অ্যাকাউন্ট · আপনার ডেটা আপনারই
               </p>
@@ -147,7 +147,7 @@ export function AuthShell({
 
             <div className="rounded-4xl border border-white/70 bg-white/90 p-6 shadow-lift backdrop-blur-xl sm:p-8">
               <div className="mb-7">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand-600">
+                <p className="font-mono text-[12px] font-bold uppercase tracking-[0.22em] text-brand-600">
                   {eyebrow}
                 </p>
                 <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-[1.7rem]">
@@ -167,7 +167,7 @@ export function AuthShell({
               )}
             </div>
 
-            <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[11px] text-slate-400">
+            <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[12.5px] text-slate-500">
               <ShieldCheck size={12} />
               Firebase দ্বারা সুরক্ষিত · যেকোনো সময় অ্যাকাউন্ট মুছে ফেলতে পারবেন
             </p>

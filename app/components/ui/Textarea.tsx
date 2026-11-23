@@ -28,7 +28,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={id}
-            className="mb-1.5 block text-[13px] font-semibold text-slate-700"
+            className="mb-1.5 block text-[14px] font-semibold text-slate-700"
           >
             {label}
           </label>
@@ -40,7 +40,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-describedby={describedBy}
           className={`
             w-full resize-y rounded-xl border bg-white px-3.5 py-3
-            text-sm text-slate-900 placeholder:text-slate-400
+            text-sm text-slate-900 placeholder:text-slate-500
             transition-all duration-200
             focus:border-brand-500 focus:outline-none focus:ring-4
             disabled:cursor-not-allowed disabled:bg-slate-50

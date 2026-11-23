@@ -19,7 +19,7 @@ export default function NotFound() {
         <div className="mx-auto mt-7 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
           <Compass size={26} />
         </div>
-        <p className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand-600">
+        <p className="mt-4 font-mono text-[12px] font-bold uppercase tracking-[0.22em] text-brand-600">
           404 · Not Found
         </p>
         <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900">
